@@ -1,13 +1,14 @@
-package theapp
+package dep
 
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"sync"
-
-	"go.uber.org/zap"
 )
+
+var DebugWriter io.Writer
 
 var (
 	closerT    = reflect.TypeOf((*closer)(nil)).Elem()
@@ -21,31 +22,31 @@ type ctxCloser interface {
 	Close(ctx context.Context) error
 }
 
-type ResolveFn[T any] func() T
+type ResolveFn[T any] func() (T, error)
 
 type Dep[T any] struct {
 	l         sync.Mutex
-	log       *zap.Logger
+	name      string
 	instance  T
 	resolve   ResolveFn[T]
 	resolved  bool
 	singleton bool
 }
 
-func NewDep[T any](resolve ResolveFn[T], singleton bool, log *zap.Logger) *Dep[T] {
+func NewDep[T any](singleton bool, resolve ResolveFn[T]) *Dep[T] {
 	tof := reflect.TypeOf(new(T)).Elem()
 	if tof.Kind() != reflect.Pointer {
 		panic(fmt.Sprintf("type `%s` is not a pointer", tof.String()))
 	}
 
 	return &Dep[T]{
+		name:      fmt.Sprintf("dep(%s)", tof.String()),
 		resolve:   resolve,
 		singleton: singleton,
-		log:       log.Named(fmt.Sprintf("dep(%s)", tof.String())),
 	}
 }
 
-func (d *Dep[T]) Get() T {
+func (d *Dep[T]) Get() (T, error) {
 	if d == nil {
 		panic("nil dep")
 	}
@@ -54,12 +55,18 @@ func (d *Dep[T]) Get() T {
 	defer d.l.Unlock()
 
 	if !d.singleton || !d.resolved {
-		d.instance = d.resolve()
+		instance, err := d.resolve()
+		if err != nil {
+			return *new(T), err
+		}
+
+		d.instance = instance
 		d.resolved = true
-		d.log.Debug("resolve")
+
+		d.debug("resolved")
 	}
 
-	return d.instance
+	return d.instance, nil
 }
 
 func (d *Dep[T]) Close(ctx context.Context) error {
@@ -71,7 +78,7 @@ func (d *Dep[T]) Close(ctx context.Context) error {
 	defer d.l.Unlock()
 
 	if !d.resolved {
-		d.log.Debug("close (nop: unresolved)")
+		d.debug("close (nop: unresolved)")
 		return nil
 	}
 
@@ -83,14 +90,20 @@ func (d *Dep[T]) Close(ctx context.Context) error {
 	vof := reflect.ValueOf(d.instance)
 
 	if vof.CanConvert(closerT) {
-		d.log.Debug("close (closerT)")
+		d.debug("close (closerT)")
 		return vof.Convert(closerT).Interface().(closer).Close()
 	} else if vof.CanConvert(ctxCloserT) {
-		d.log.Debug("close (ctxCloserT)")
+		d.debug("close (ctxCloserT)")
 		return vof.Convert(ctxCloserT).Interface().(ctxCloser).Close(ctx)
 	}
 
-	d.log.Debug("close (nop: no closer)")
+	d.debug("close (nop: no closer)")
 
 	return nil
+}
+
+func (d *Dep[T]) debug(msg string) {
+	if DebugWriter != nil {
+		_, _ = DebugWriter.Write([]byte(d.name + ": " + msg + "\n"))
+	}
 }
