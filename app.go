@@ -15,15 +15,8 @@ import (
 type CloserFn func(context.Context) error
 
 type IApp interface {
-	Lock()
-	Unlock()
-
 	IConfig() IConfig
-	IsDebug() bool
-
 	L() *zap.Logger
-
-	AddCloser(fns ...CloserFn)
 	Close(ctx context.Context) error
 }
 
