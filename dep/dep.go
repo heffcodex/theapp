@@ -69,6 +69,15 @@ func (d *D[T]) Get() (T, error) {
 	return d.instance, nil
 }
 
+func (d *D[T]) MustGet() T {
+	v, err := d.Get()
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
 func (d *D[T]) Close(ctx context.Context) error {
 	if d == nil {
 		return nil
