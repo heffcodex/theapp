@@ -15,19 +15,17 @@ type RedisConfig struct {
 	KeysPrefix string `mapstructure:"keys_prefix"`
 }
 
-type RedisClient struct {
+type Redis struct {
 	*redis.Client
 	keysPrefix string
 }
 
-func (rc *RedisClient) KeysPrefix() string {
-	return rc.keysPrefix
+func (r *Redis) KeysPrefix() string {
+	return r.keysPrefix
 }
 
-type Redis Dep[*RedisClient]
-
-func NewRedis(cfg RedisConfig) *Redis {
-	resolve := func() (*RedisClient, error) {
+func NewRedis(cfg RedisConfig) *Dep[*Redis] {
+	resolve := func() (*Redis, error) {
 		dsnURL, err := url.Parse(cfg.DSN)
 		if err != nil {
 			return nil, errors.Wrap(err, "can't parse DSN as URL")
@@ -57,11 +55,11 @@ func NewRedis(cfg RedisConfig) *Redis {
 			opts.TLSConfig.ServerName = dsnURL.Hostname()
 		}
 
-		return &RedisClient{
+		return &Redis{
 			Client:     redis.NewClient(opts),
 			keysPrefix: cfg.KeysPrefix,
 		}, nil
 	}
 
-	return (*Redis)(NewDep(true, resolve))
+	return NewDep(true, resolve)
 }

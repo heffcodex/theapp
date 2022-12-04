@@ -12,14 +12,12 @@ type BunConfigPostgres struct {
 	MaxConnections int    `mapstructure:"max_connections"`
 }
 
-type Bun Dep[*bun.DB]
-
 func NewBunPostgres(
 	cfg BunConfigPostgres,
 	onTuneConnector func(conn *pgdriver.Connector),
 	onTuneSQLDB func(db *sql.DB),
 	onTuneBunDB func(db *bun.DB),
-) *Bun {
+) *Dep[*bun.DB] {
 	resolve := func() (*bun.DB, error) {
 		conn := pgdriver.NewConnector(pgdriver.WithDSN(cfg.DSN))
 		if onTuneConnector != nil {
@@ -40,5 +38,5 @@ func NewBunPostgres(
 		return bunDB, nil
 	}
 
-	return (*Bun)(NewDep(true, resolve))
+	return NewDep(true, resolve)
 }
