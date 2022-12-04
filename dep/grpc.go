@@ -10,7 +10,7 @@ type GRPCConfig struct {
 	Port uint16 `mapstructure:"port"`
 }
 
-func NewGRPC(cfg GRPCConfig, dialOptions ...grpc.DialOption) *Dep[*grpc.ClientConn] {
+func NewGRPC(cfg GRPCConfig, dialOptions ...grpc.DialOption) *D[*grpc.ClientConn] {
 	resolve := func() (*grpc.ClientConn, error) {
 		return grpc.Dial(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port), dialOptions...)
 	}

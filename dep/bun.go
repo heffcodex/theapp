@@ -17,7 +17,7 @@ func NewBunPostgres(
 	onTuneConnector func(conn *pgdriver.Connector),
 	onTuneSQLDB func(db *sql.DB),
 	onTuneBunDB func(db *bun.DB),
-) *Dep[*bun.DB] {
+) *D[*bun.DB] {
 	resolve := func() (*bun.DB, error) {
 		conn := pgdriver.NewConnector(pgdriver.WithDSN(cfg.DSN))
 		if onTuneConnector != nil {

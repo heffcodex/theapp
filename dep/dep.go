@@ -24,7 +24,7 @@ type ctxCloser interface {
 
 type ResolveFn[T any] func() (T, error)
 
-type Dep[T any] struct {
+type D[T any] struct {
 	l         sync.Mutex
 	name      string
 	instance  T
@@ -33,20 +33,20 @@ type Dep[T any] struct {
 	singleton bool
 }
 
-func NewDep[T any](singleton bool, resolve ResolveFn[T]) *Dep[T] {
+func NewDep[T any](singleton bool, resolve ResolveFn[T]) *D[T] {
 	tof := reflect.TypeOf(new(T)).Elem()
 	if tof.Kind() != reflect.Pointer {
 		panic(fmt.Sprintf("type `%s` is not a pointer", tof.String()))
 	}
 
-	return &Dep[T]{
+	return &D[T]{
 		name:      fmt.Sprintf("dep(%s)", tof.String()),
 		resolve:   resolve,
 		singleton: singleton,
 	}
 }
 
-func (d *Dep[T]) Get() (T, error) {
+func (d *D[T]) Get() (T, error) {
 	if d == nil {
 		panic("nil dep")
 	}
@@ -69,7 +69,7 @@ func (d *Dep[T]) Get() (T, error) {
 	return d.instance, nil
 }
 
-func (d *Dep[T]) Close(ctx context.Context) error {
+func (d *D[T]) Close(ctx context.Context) error {
 	if d == nil {
 		return nil
 	}
@@ -102,7 +102,7 @@ func (d *Dep[T]) Close(ctx context.Context) error {
 	return nil
 }
 
-func (d *Dep[T]) debug(msg string) {
+func (d *D[T]) debug(msg string) {
 	if DebugWriter != nil {
 		_, _ = DebugWriter.Write([]byte(d.name + ": " + msg + "\n"))
 	}

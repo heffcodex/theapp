@@ -24,7 +24,7 @@ func (r *Redis) KeysPrefix() string {
 	return r.keysPrefix
 }
 
-func NewRedis(cfg RedisConfig) *Dep[*Redis] {
+func NewRedis(cfg RedisConfig) *D[*Redis] {
 	resolve := func() (*Redis, error) {
 		dsnURL, err := url.Parse(cfg.DSN)
 		if err != nil {
