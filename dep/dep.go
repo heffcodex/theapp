@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"reflect"
 	"sync"
 )
-
-var DebugWriter io.Writer
 
 var (
 	closerT    = reflect.TypeOf((*closer)(nil)).Elem()
@@ -25,25 +24,37 @@ type ctxCloser interface {
 type ResolveFn[T any] func() (T, error)
 
 type D[T any] struct {
-	l         sync.Mutex
-	name      string
-	instance  T
-	resolve   ResolveFn[T]
-	resolved  bool
-	singleton bool
+	l       sync.Mutex
+	name    string
+	resolve ResolveFn[T]
+
+	// updated in behaviour of Get(), MustGet() or Close()
+	instance T
+	resolved bool
+
+	// controlled by options:
+	singleton   bool
+	debug       bool
+	debugWriter io.Writer
 }
 
-func NewDep[T any](singleton bool, resolve ResolveFn[T]) *D[T] {
+func NewDep[T any](resolve ResolveFn[T], options ...Option[T]) *D[T] {
 	tof := reflect.TypeOf(new(T)).Elem()
 	if tof.Kind() != reflect.Pointer {
 		panic(fmt.Sprintf("type `%s` is not a pointer", tof.String()))
 	}
 
-	return &D[T]{
-		name:      fmt.Sprintf("dep(%s)", tof.String()),
-		resolve:   resolve,
-		singleton: singleton,
+	d := &D[T]{
+		name:        fmt.Sprintf("dep(%s)", tof.String()),
+		resolve:     resolve,
+		debugWriter: log.Writer(),
 	}
+
+	for _, opt := range options {
+		opt(d)
+	}
+
+	return d
 }
 
 func (d *D[T]) Get() (T, error) {
@@ -63,7 +74,7 @@ func (d *D[T]) Get() (T, error) {
 		d.instance = instance
 		d.resolved = true
 
-		d.debug("resolved")
+		d.debugWrite("resolved")
 	}
 
 	return d.instance, nil
@@ -87,7 +98,7 @@ func (d *D[T]) Close(ctx context.Context) error {
 	defer d.l.Unlock()
 
 	if !d.resolved {
-		d.debug("close (nop: unresolved)")
+		d.debugWrite("close (nop: unresolved)")
 		return nil
 	}
 
@@ -99,20 +110,18 @@ func (d *D[T]) Close(ctx context.Context) error {
 	vof := reflect.ValueOf(d.instance)
 
 	if vof.CanConvert(closerT) {
-		d.debug("close (closerT)")
+		d.debugWrite("close (closerT)")
 		return vof.Convert(closerT).Interface().(closer).Close()
 	} else if vof.CanConvert(ctxCloserT) {
-		d.debug("close (ctxCloserT)")
+		d.debugWrite("close (ctxCloserT)")
 		return vof.Convert(ctxCloserT).Interface().(ctxCloser).Close(ctx)
 	}
 
-	d.debug("close (nop: no closer)")
+	d.debugWrite("close (nop: no closer)")
 
 	return nil
 }
 
-func (d *D[T]) debug(msg string) {
-	if DebugWriter != nil {
-		_, _ = DebugWriter.Write([]byte(d.name + ": " + msg + "\n"))
-	}
+func (d *D[T]) debugWrite(msg string) {
+	_, _ = d.debugWriter.Write([]byte(d.name + ": " + msg + "\n"))
 }
