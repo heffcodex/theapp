@@ -38,7 +38,7 @@ type D[T any] struct {
 	debugWriter io.Writer
 }
 
-func NewDep[T any](resolve ResolveFn[T], options ...Option[T]) *D[T] {
+func New[T any](resolve ResolveFn[T], options ...Option[T]) *D[T] {
 	tof := reflect.TypeOf(new(T)).Elem()
 	if tof.Kind() != reflect.Pointer {
 		panic(fmt.Sprintf("type `%s` is not a pointer", tof.String()))

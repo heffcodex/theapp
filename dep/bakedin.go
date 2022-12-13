@@ -27,6 +27,7 @@ func NewBunPostgres(
 	onTuneConnector func(conn *pgdriver.Connector),
 	onTuneSQLDB func(db *sql.DB),
 	onTuneBunDB func(db *bun.DB),
+	options ...Option[*bun.DB],
 ) *D[*bun.DB] {
 	resolve := func() (*bun.DB, error) {
 		conn := pgdriver.NewConnector(pgdriver.WithDSN(cfg.DSN))
@@ -48,7 +49,7 @@ func NewBunPostgres(
 		return bunDB, nil
 	}
 
-	return NewDep(true, resolve)
+	return New(resolve, options...)
 }
 
 // GRPC Client
@@ -58,12 +59,12 @@ type GRPCConfig struct {
 	Port uint16 `mapstructure:"port"`
 }
 
-func NewGRPC(cfg GRPCConfig, dialOptions ...grpc.DialOption) *D[*grpc.ClientConn] {
+func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option[*grpc.ClientConn]) *D[*grpc.ClientConn] {
 	resolve := func() (*grpc.ClientConn, error) {
 		return grpc.Dial(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port), dialOptions...)
 	}
 
-	return NewDep(true, resolve)
+	return New(resolve, options...)
 }
 
 // Redis Client
@@ -83,7 +84,7 @@ func (r *Redis) KeysPrefix() string {
 	return r.keysPrefix
 }
 
-func NewRedis(cfg RedisConfig) *D[*Redis] {
+func NewRedis(cfg RedisConfig, options ...Option[*Redis]) *D[*Redis] {
 	resolve := func() (*Redis, error) {
 		dsnURL, err := url.Parse(cfg.DSN)
 		if err != nil {
@@ -120,5 +121,5 @@ func NewRedis(cfg RedisConfig) *D[*Redis] {
 		}, nil
 	}
 
-	return NewDep(true, resolve)
+	return New(resolve, options...)
 }
