@@ -3,8 +3,7 @@ package dep
 import (
 	"context"
 	"fmt"
-	"io"
-	"log"
+	"go.uber.org/zap"
 	"reflect"
 	"sync"
 )
@@ -33,9 +32,9 @@ type D[T any] struct {
 	resolved bool
 
 	// controlled by options:
-	singleton   bool
-	debug       bool
-	debugWriter io.Writer
+	singleton bool
+	debug     bool
+	debugLog  *zap.Logger
 }
 
 func New[T any](resolve ResolveFn[T], options ...Option[T]) *D[T] {
@@ -45,9 +44,9 @@ func New[T any](resolve ResolveFn[T], options ...Option[T]) *D[T] {
 	}
 
 	d := &D[T]{
-		name:        fmt.Sprintf("dep(%s)", tof.String()),
-		resolve:     resolve,
-		debugWriter: log.Writer(),
+		name:     fmt.Sprintf("dep(%s)", tof.String()),
+		resolve:  resolve,
+		debugLog: zap.NewNop(),
 	}
 
 	for _, opt := range options {
@@ -123,5 +122,7 @@ func (d *D[T]) Close(ctx context.Context) error {
 }
 
 func (d *D[T]) debugWrite(msg string) {
-	_, _ = d.debugWriter.Write([]byte(d.name + ": " + msg + "\n"))
+	if d.debug {
+		d.debugLog.Debug(msg, zap.String("name", d.name))
+	}
 }

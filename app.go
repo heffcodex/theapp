@@ -24,8 +24,8 @@ var _ IApp = (*App)(nil)
 
 type App struct {
 	l        sync.Mutex
-	closeFns []CloserFn
 	cfg      IConfig
+	closeFns []CloserFn
 	log      *zap.Logger
 }
 
@@ -47,7 +47,10 @@ func NewApp(cfg IConfig) (*App, error) {
 		return nil, errors.Wrap(err, "can't set maxprocs")
 	}
 
-	return &App{cfg: cfg, log: appLog}, nil
+	return &App{
+		cfg: cfg,
+		log: appLog,
+	}, nil
 }
 
 func (a *App) Lock()   { a.l.Lock() }
