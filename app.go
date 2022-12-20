@@ -18,6 +18,7 @@ type IApp interface {
 	IConfig() IConfig
 	IsDebug() bool
 	L() *zap.Logger
+	AddCloser(fns ...CloseFn)
 	Close(ctx context.Context) error
 }
 
