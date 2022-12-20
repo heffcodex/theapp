@@ -18,20 +18,21 @@ func getApp[A IApp](cmd *cobra.Command) A {
 	return cmd.Context().Value(AppCmdContextKey).(A)
 }
 
-func WaitShutdown(cmd *cobra.Command) {
-	getShutter(cmd).waitShutdownComplete(cmd.Context())
+func WaitInterrupt(cmd *cobra.Command) {
+	getShutter(cmd).waitInterrupt()
 }
 
 func getShutter(cmd *cobra.Command) *shutter {
 	return cmd.Context().Value(ShutterCmdContextKey).(*shutter)
 }
 
-func cmdInject[A IApp](cmd *cobra.Command, app A, shutter *shutter) context.CancelFunc {
-	ctx, cancel := context.WithCancel(cmd.Context())
+func cmdInject[A IApp](cmd *cobra.Command, app A, shutter *shutter) (cancel context.CancelFunc) {
+	ctx := cmd.Context()
 
 	ctx = context.WithValue(ctx, AppCmdContextKey, app)
 	ctx = context.WithValue(ctx, ShutterCmdContextKey, shutter)
 
+	ctx, cancel = context.WithCancel(cmd.Context())
 	cmd.SetContext(ctx)
 
 	return cancel

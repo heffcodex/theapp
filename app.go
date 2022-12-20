@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type CloserFn func(context.Context) error
+type CloseFn func(context.Context) error
 
 type IApp interface {
 	IConfig() IConfig
@@ -25,7 +25,7 @@ var _ IApp = (*App)(nil)
 type App struct {
 	l        sync.Mutex
 	cfg      IConfig
-	closeFns []CloserFn
+	closeFns []CloseFn
 	log      *zap.Logger
 }
 
@@ -61,7 +61,7 @@ func (a *App) IsDebug() bool    { return a.cfg.LogLevel() == zap.DebugLevel.Stri
 
 func (a *App) L() *zap.Logger { return a.log }
 
-func (a *App) AddCloser(fns ...CloserFn) {
+func (a *App) AddCloser(fns ...CloseFn) {
 	a.l.Lock()
 	defer a.l.Unlock()
 

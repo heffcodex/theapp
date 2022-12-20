@@ -2,6 +2,7 @@ package theapp
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -12,13 +13,13 @@ import (
 )
 
 type shutter struct {
-	log                   *zap.Logger
-	cancelFn              context.CancelFunc
-	timeout               time.Duration
-	signals               []os.Signal
-	notifyChan            chan os.Signal
-	completeChan          chan struct{}
-	triggered, inShutdown atomic.Bool
+	log        *zap.Logger
+	cancelFn   context.CancelFunc
+	onShutdown CloseFn
+	timeout    time.Duration
+	signals    []os.Signal
+	notifyChan chan os.Signal
+	hasWaiter  atomic.Bool
 }
 
 func newShutter(signals ...os.Signal) *shutter {
@@ -27,75 +28,74 @@ func newShutter(signals ...os.Signal) *shutter {
 	}
 
 	return &shutter{
-		signals:      signals,
-		notifyChan:   make(chan os.Signal, len(signals)),
-		completeChan: make(chan struct{}),
+		signals:    signals,
+		notifyChan: make(chan os.Signal, len(signals)),
 	}
 }
 
-func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, timeout time.Duration) *shutter {
+func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, onShutdown CloseFn, timeout time.Duration) *shutter {
 	if timeout <= 0 {
 		timeout = 5 * time.Second
 	}
 
 	s.log = log
 	s.cancelFn = cancelFn
+	s.onShutdown = onShutdown
 	s.timeout = timeout
 
 	return s
 }
 
-func (s *shutter) waitShutdownTrigger(execCloser CloserFn) {
-	signal.Notify(s.notifyChan, s.signals...)
+func (s *shutter) waitInterrupt() {
+	firstWaiter := s.hasWaiter.CompareAndSwap(false, true)
+
+	if firstWaiter {
+		signal.Notify(s.notifyChan, s.signals...)
+	}
+
 	<-s.notifyChan
 
-	s.log.Info("shutdown started", zap.Duration("timeout", s.timeout))
-	s.cancelFn()
-
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
-	defer func() { cancel(); s.completeChan <- struct{}{} }()
-
-	err := (error)(nil)
-	shutdownOK := make(chan any)
-
-	go func() {
-		defer close(shutdownOK)
-		if execCloser != nil {
-			err = execCloser(ctx)
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		s.log.Error("shutdown timeout")
-	case <-shutdownOK:
-		//
-	}
-
-	if err != nil {
-		s.log.Error("shutdown error", zap.Error(err))
-	}
-}
-
-func (s *shutter) triggerShutdown() {
-	if !s.triggered.CompareAndSwap(false, true) {
+	if !firstWaiter {
 		return
 	}
-
-	s.log.Debug("shutdown triggered")
 
 	signal.Stop(s.notifyChan)
 	close(s.notifyChan)
+
+	s.log.Debug("shutdown interrupt")
 }
 
-func (s *shutter) waitShutdownComplete(waitCtx context.Context) {
-	if !s.inShutdown.CompareAndSwap(false, true) {
-		return
+func (s *shutter) shutdown() {
+	s.log.Info("shutdown start", zap.Duration("timeout", s.timeout))
+	s.cancelFn()
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+	defer func() {
+		cancel()
+		_ = s.log.Sync()
+	}()
+
+	onShutdownErr := make(chan error)
+
+	go func() {
+		defer close(onShutdownErr)
+
+		if s.onShutdown != nil {
+			onShutdownErr <- s.onShutdown(ctx)
+		}
+	}()
+
+	var err error
+
+	select {
+	case <-ctx.Done():
+		err = errors.New("shutdown timeout")
+	case err = <-onShutdownErr:
 	}
 
-	<-waitCtx.Done()
-	<-s.completeChan
-
-	s.log.Info("shutdown complete")
-	_ = s.log.Sync()
+	if err == nil {
+		s.log.Info("shutdown complete")
+	} else {
+		s.log.Error("shutdown error", zap.Error(err))
+	}
 }

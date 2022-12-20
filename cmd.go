@@ -35,7 +35,7 @@ func (c *Cmd) makeRoot() *cobra.Command {
 	shutter := newShutter()
 
 	root := &cobra.Command{
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
 			app, err := c.newAppFn()
 			if err != nil {
 				return errors.Wrap(err, "can't create app")
@@ -44,14 +44,12 @@ func (c *Cmd) makeRoot() *cobra.Command {
 			cancelFn := cmdInject(cmd, app, shutter)
 			timeout := app.IConfig().ShutdownTimeout()
 
-			shutter.setup(app.L(), cancelFn, timeout)
-			go shutter.waitShutdownTrigger(app.Close)
+			shutter.setup(app.L(), cancelFn, app.Close, timeout)
 
 			return nil
 		},
-		PersistentPostRun: func(cmd *cobra.Command, _ []string) {
-			shutter.triggerShutdown()
-			shutter.waitShutdownComplete(cmd.Context())
+		PostRun: func(*cobra.Command, []string) {
+			shutter.shutdown()
 		},
 	}
 
