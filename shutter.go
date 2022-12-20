@@ -20,6 +20,7 @@ type shutter struct {
 	signals    []os.Signal
 	notifyChan chan os.Signal
 	hasWaiter  atomic.Bool
+	inShutdown atomic.Bool
 }
 
 func newShutter(signals ...os.Signal) *shutter {
@@ -66,6 +67,10 @@ func (s *shutter) waitInterrupt() {
 }
 
 func (s *shutter) shutdown() {
+	if !s.inShutdown.CompareAndSwap(false, true) {
+		return
+	}
+
 	s.log.Info("shutdown start", zap.Duration("timeout", s.timeout))
 	s.cancelFn()
 

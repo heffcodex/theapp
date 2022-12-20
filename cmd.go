@@ -35,7 +35,7 @@ func (c *Cmd) makeRoot() *cobra.Command {
 	shutter := newShutter()
 
 	root := &cobra.Command{
-		PreRunE: func(cmd *cobra.Command, _ []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			app, err := c.newAppFn()
 			if err != nil {
 				return errors.Wrap(err, "can't create app")
@@ -48,7 +48,7 @@ func (c *Cmd) makeRoot() *cobra.Command {
 
 			return nil
 		},
-		PostRun: func(*cobra.Command, []string) {
+		PersistentPostRun: func(*cobra.Command, []string) {
 			shutter.shutdown()
 		},
 	}
