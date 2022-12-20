@@ -2,8 +2,6 @@ package theapp
 
 import (
 	"github.com/heffcodex/zapex"
-	"time"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -44,9 +42,9 @@ func (c *Cmd) makeRoot() *cobra.Command {
 			}
 
 			cancelFn := injectAppAndCancelIntoCmd(cmd, app)
-			gracePeriod := time.Duration(app.IConfig().ShutdownGracePeriod()) * time.Second
+			timeout := app.IConfig().ShutdownTimeout()
 
-			shutter.setup(app.L(), cancelFn, gracePeriod)
+			shutter.setup(app.L(), cancelFn, timeout)
 			go shutter.waitShutdown(app.Close)
 
 			return nil

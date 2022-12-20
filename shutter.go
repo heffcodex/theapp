@@ -13,7 +13,7 @@ import (
 type shutter struct {
 	log          *zap.Logger
 	cancelFn     context.CancelFunc
-	gracePeriod  time.Duration
+	timeout      time.Duration
 	signals      []os.Signal
 	notifyChan   chan os.Signal
 	completeChan chan struct{}
@@ -31,14 +31,14 @@ func newShutter(signals ...os.Signal) *shutter {
 	}
 }
 
-func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, gracePeriod time.Duration) *shutter {
-	if gracePeriod <= 0 {
-		gracePeriod = 5 * time.Second
+func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, timeout time.Duration) *shutter {
+	if timeout <= 0 {
+		timeout = 5 * time.Second
 	}
 
 	s.log = log
 	s.cancelFn = cancelFn
-	s.gracePeriod = gracePeriod
+	s.timeout = timeout
 
 	return s
 }
@@ -47,10 +47,10 @@ func (s *shutter) waitShutdown(execCloser CloserFn) {
 	signal.Notify(s.notifyChan, s.signals...)
 	<-s.notifyChan
 
-	s.log.Info("shutdown started", zap.Duration("grace", s.gracePeriod))
+	s.log.Info("shutdown started", zap.Duration("timeout", s.timeout))
 	s.cancelFn()
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.gracePeriod)
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer func() { cancel(); s.completeChan <- struct{}{} }()
 
 	err := (error)(nil)
