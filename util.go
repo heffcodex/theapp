@@ -32,7 +32,7 @@ func cmdInject[A IApp](cmd *cobra.Command, app A, shutter *shutter) (cancel cont
 	ctx = context.WithValue(ctx, AppCmdContextKey, app)
 	ctx = context.WithValue(ctx, ShutterCmdContextKey, shutter)
 
-	ctx, cancel = context.WithCancel(cmd.Context())
+	ctx, cancel = context.WithCancel(ctx)
 	cmd.SetContext(ctx)
 
 	return cancel
