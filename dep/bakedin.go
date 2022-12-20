@@ -1,7 +1,6 @@
 package dep
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 	"google.golang.org/grpc"
-	"net/url"
 	"os"
 )
 
@@ -86,33 +84,28 @@ func (r *Redis) KeysPrefix() string {
 
 func NewRedis(cfg RedisConfig, options ...Option[*Redis]) *D[*Redis] {
 	resolve := func() (*Redis, error) {
-		dsnURL, err := url.Parse(cfg.DSN)
-		if err != nil {
-			return nil, errors.Wrap(err, "can't parse DSN as URL")
-		}
-
 		opts, err := redis.ParseURL(cfg.DSN)
 		if err != nil {
 			return nil, errors.Wrap(err, "can't parse DSN as options")
 		}
 
-		opts.TLSConfig = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-		if cfg.Cert != "" {
-			ca, err := os.ReadFile(cfg.Cert)
-			if err != nil {
-				return nil, errors.Wrap(err, "can't read root CA")
-			}
+		if opts.TLSConfig != nil {
+			opts.TLSConfig.InsecureSkipVerify = true
 
-			rootCAs := x509.NewCertPool()
-			if !rootCAs.AppendCertsFromPEM(ca) {
-				return nil, errors.New("can't append root CA")
-			}
+			if cfg.Cert != "" {
+				ca, err := os.ReadFile(cfg.Cert)
+				if err != nil {
+					return nil, errors.Wrap(err, "can't read root CA")
+				}
 
-			opts.TLSConfig.InsecureSkipVerify = false
-			opts.TLSConfig.RootCAs = rootCAs
-			opts.TLSConfig.ServerName = dsnURL.Hostname()
+				rootCAs := x509.NewCertPool()
+				if !rootCAs.AppendCertsFromPEM(ca) {
+					return nil, errors.New("can't append root CA")
+				}
+
+				opts.TLSConfig.InsecureSkipVerify = false
+				opts.TLSConfig.RootCAs = rootCAs
+			}
 		}
 
 		return &Redis{
