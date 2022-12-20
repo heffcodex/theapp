@@ -16,6 +16,7 @@ type CloseFn func(context.Context) error
 
 type IApp interface {
 	IConfig() IConfig
+	IsDebug() bool
 	L() *zap.Logger
 	Close(ctx context.Context) error
 }
@@ -23,10 +24,10 @@ type IApp interface {
 var _ IApp = (*App)(nil)
 
 type App struct {
-	l        sync.Mutex
-	cfg      IConfig
-	closeFns []CloseFn
-	log      *zap.Logger
+	cfg       IConfig
+	closeFns  []CloseFn
+	closeLock sync.Mutex
+	log       *zap.Logger
 }
 
 func NewApp(cfg IConfig) (*App, error) {
@@ -53,24 +54,21 @@ func NewApp(cfg IConfig) (*App, error) {
 	}, nil
 }
 
-func (a *App) Lock()   { a.l.Lock() }
-func (a *App) Unlock() { a.l.Unlock() }
-
 func (a *App) IConfig() IConfig { return a.cfg }
 func (a *App) IsDebug() bool    { return a.cfg.LogLevel() == zap.DebugLevel.String() }
 
 func (a *App) L() *zap.Logger { return a.log }
 
 func (a *App) AddCloser(fns ...CloseFn) {
-	a.l.Lock()
-	defer a.l.Unlock()
+	a.closeLock.Lock()
+	defer a.closeLock.Unlock()
 
 	a.closeFns = append(a.closeFns, fns...)
 }
 
 func (a *App) Close(ctx context.Context) error {
-	a.l.Lock()
-	defer a.l.Unlock()
+	a.closeLock.Lock()
+	defer a.closeLock.Unlock()
 
 	errs := make([]error, 0, len(a.closeFns))
 
