@@ -29,8 +29,7 @@ func newShutter(signals ...os.Signal) *shutter {
 	}
 
 	return &shutter{
-		signals:    signals,
-		notifyChan: make(chan os.Signal, len(signals)),
+		signals: signals,
 	}
 }
 
@@ -51,19 +50,18 @@ func (s *shutter) waitInterrupt() {
 	firstWaiter := s.hasWaiter.CompareAndSwap(false, true)
 
 	if firstWaiter {
+		s.notifyChan = make(chan os.Signal, len(s.signals))
 		signal.Notify(s.notifyChan, s.signals...)
 	}
 
 	<-s.notifyChan
 
-	if !firstWaiter {
-		return
+	if firstWaiter {
+		signal.Stop(s.notifyChan)
+		close(s.notifyChan)
+
+		s.log.Debug("shutdown interrupt")
 	}
-
-	signal.Stop(s.notifyChan)
-	close(s.notifyChan)
-
-	s.log.Debug("shutdown interrupt")
 }
 
 func (s *shutter) shutdown() {
