@@ -41,16 +41,17 @@ func (c *Cmd) makeRoot() *cobra.Command {
 				return errors.Wrap(err, "can't create app")
 			}
 
-			cancelFn := injectAppAndCancelIntoCmd(cmd, app)
+			cancelFn := cmdInject(cmd, app, shutter)
 			timeout := app.IConfig().ShutdownTimeout()
 
 			shutter.setup(app.L(), cancelFn, timeout)
-			go shutter.waitShutdown(app.Close)
+			go shutter.waitShutdownTrigger(app.Close)
 
 			return nil
 		},
 		PersistentPostRun: func(cmd *cobra.Command, _ []string) {
-			shutter.shutdown(cmd.Context())
+			shutter.triggerShutdown()
+			shutter.waitShutdownComplete(cmd.Context())
 		},
 	}
 

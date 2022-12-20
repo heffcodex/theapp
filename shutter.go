@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -11,12 +12,13 @@ import (
 )
 
 type shutter struct {
-	log          *zap.Logger
-	cancelFn     context.CancelFunc
-	timeout      time.Duration
-	signals      []os.Signal
-	notifyChan   chan os.Signal
-	completeChan chan struct{}
+	log                   *zap.Logger
+	cancelFn              context.CancelFunc
+	timeout               time.Duration
+	signals               []os.Signal
+	notifyChan            chan os.Signal
+	completeChan          chan struct{}
+	triggered, inShutdown atomic.Bool
 }
 
 func newShutter(signals ...os.Signal) *shutter {
@@ -43,7 +45,7 @@ func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, timeout ti
 	return s
 }
 
-func (s *shutter) waitShutdown(execCloser CloserFn) {
+func (s *shutter) waitShutdownTrigger(execCloser CloserFn) {
 	signal.Notify(s.notifyChan, s.signals...)
 	<-s.notifyChan
 
@@ -65,29 +67,35 @@ func (s *shutter) waitShutdown(execCloser CloserFn) {
 
 	select {
 	case <-ctx.Done():
-		s.log.Fatal("shutdown timeout")
+		s.log.Error("shutdown timeout")
 	case <-shutdownOK:
 		//
 	}
 
 	if err != nil {
-		s.log.Fatal("shutdown error", zap.Error(err))
+		s.log.Error("shutdown error", zap.Error(err))
 	}
-
-	s.log.Info("shutdown complete")
 }
 
-func (s *shutter) shutdown(waitCtx context.Context) {
+func (s *shutter) triggerShutdown() {
+	if !s.triggered.CompareAndSwap(false, true) {
+		return
+	}
+
 	s.log.Debug("shutdown triggered")
 
 	signal.Stop(s.notifyChan)
 	close(s.notifyChan)
+}
+
+func (s *shutter) waitShutdownComplete(waitCtx context.Context) {
+	if !s.inShutdown.CompareAndSwap(false, true) {
+		return
+	}
 
 	<-waitCtx.Done()
 	<-s.completeChan
 
-	s.log.Debug("app exit")
+	s.log.Info("shutdown complete")
 	_ = s.log.Sync()
-
-	os.Exit(0)
 }
