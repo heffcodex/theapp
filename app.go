@@ -37,6 +37,8 @@ func NewApp(cfg IConfig) (*App, error) {
 		return nil, errors.Wrap(err, "can't create logger")
 	}
 
+	zapex.SetDefault(log)
+
 	appLog := log.Named(cfg.AppName())
 	maxprocsLog := appLog.Named("maxprocs")
 
