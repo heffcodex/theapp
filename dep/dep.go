@@ -20,40 +20,36 @@ type ctxCloser interface {
 	Close(ctx context.Context) error
 }
 
-type ResolveFn[T any] func() (T, error)
+type ResolveFn[T any] func(opts OptSet) (T, error)
 
 type D[T any] struct {
 	l       sync.Mutex
 	name    string
 	resolve ResolveFn[T]
+	opts    OptSet
 
 	// updated in behaviour of Get(), MustGet() or Close()
 	instance T
 	resolved bool
-
-	// controlled by options:
-	singleton bool
-	debug     bool
-	debugLog  *zap.Logger
 }
 
-func New[T any](resolve ResolveFn[T], options ...Option[T]) *D[T] {
+func New[T any](resolve ResolveFn[T], options ...Option) *D[T] {
 	tof := reflect.TypeOf(new(T)).Elem()
 	if tof.Kind() != reflect.Pointer {
 		panic(fmt.Sprintf("type `%s` is not a pointer", tof.String()))
 	}
 
 	d := &D[T]{
-		name:     fmt.Sprintf("dep(%s)", tof.String()),
-		resolve:  resolve,
-		debugLog: zap.NewNop(),
-	}
-
-	for _, opt := range options {
-		opt(d)
+		name:    fmt.Sprintf("dep(%s)", tof.String()),
+		resolve: resolve,
+		opts:    newOptSet(options...),
 	}
 
 	return d
+}
+
+func (d *D[T]) Options() OptSet {
+	return d.opts
 }
 
 func (d *D[T]) Get() (T, error) {
@@ -64,8 +60,8 @@ func (d *D[T]) Get() (T, error) {
 	d.l.Lock()
 	defer d.l.Unlock()
 
-	if !d.singleton || !d.resolved {
-		instance, err := d.resolve()
+	if !d.opts.singleton || !d.resolved {
+		instance, err := d.resolve(d.opts)
 		if err != nil {
 			return *new(T), err
 		}
@@ -122,7 +118,7 @@ func (d *D[T]) Close(ctx context.Context) error {
 }
 
 func (d *D[T]) debugWrite(msg string) {
-	if d.debug {
-		d.debugLog.Debug(msg, zap.String("name", d.name))
+	if d.opts.debug {
+		d.opts.debugLog.Debug(msg, zap.String("name", d.name))
 	}
 }
