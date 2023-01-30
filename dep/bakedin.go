@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"os"
+	"strings"
 )
 
 // Bun
@@ -101,18 +102,22 @@ func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) *
 // Redis Client
 
 type RedisConfig struct {
-	DSN        string `mapstructure:"dsn"`
-	Cert       string `mapstructure:"cert"`
-	KeysPrefix string `mapstructure:"keys_prefix"`
+	DSN      string `mapstructure:"dsn"`
+	Cert     string `mapstructure:"cert"`
+	KeyGroup string `mapstructure:"key_group"`
 }
 
 type Redis struct {
 	*redis.Client
-	keysPrefix string
+	keyGroup string
 }
 
-func (r *Redis) KeysPrefix() string {
-	return r.keysPrefix
+func (r *Redis) KeyPrefix() string {
+	return r.keyGroup + ":"
+}
+
+func (r *Redis) Key(parts ...string) string {
+	return strings.Join(append([]string{r.keyGroup}, parts...), ":")
 }
 
 func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
@@ -142,8 +147,8 @@ func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
 		}
 
 		return &Redis{
-			Client:     redis.NewClient(opts),
-			keysPrefix: cfg.KeysPrefix,
+			Client:   redis.NewClient(opts),
+			keyGroup: cfg.KeyGroup,
 		}, nil
 	}
 
