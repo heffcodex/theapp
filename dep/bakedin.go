@@ -151,8 +151,8 @@ func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
 		}
 
 		keyGroup := cfg.KeyGroup
-		if o.keyEnv != "" {
-			keyGroup = keyGroup + ":" + o.keyEnv.String()
+		if o.env != "" {
+			keyGroup = keyGroup + ":" + o.env.String()
 		}
 
 		return &Redis{

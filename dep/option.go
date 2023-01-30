@@ -6,7 +6,7 @@ import (
 )
 
 type OptSet struct {
-	keyEnv    cfg.Env
+	env       cfg.Env
 	singleton bool
 	debug     bool
 	debugLog  *zap.Logger
@@ -24,16 +24,16 @@ func newOptSet(options ...Option) OptSet {
 	return opts
 }
 
-func (o *OptSet) KeyEnv() cfg.Env          { return o.keyEnv }
+func (o *OptSet) Env() cfg.Env             { return o.env }
 func (o *OptSet) IsSingleton() bool        { return o.singleton }
 func (o *OptSet) IsDebug() bool            { return o.debug }
 func (o *OptSet) DebugLogger() *zap.Logger { return o.debugLog }
 
 type Option func(*OptSet)
 
-func KeyEnv(env cfg.Env) Option {
+func Env(env cfg.Env) Option {
 	return func(o *OptSet) {
-		o.keyEnv = env
+		o.env = env
 	}
 }
 
