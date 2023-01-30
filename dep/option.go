@@ -31,15 +31,15 @@ func (o *OptSet) DebugLogger() *zap.Logger { return o.debugLog }
 
 type Option func(*OptSet)
 
-func Singleton() Option {
-	return func(o *OptSet) {
-		o.singleton = true
-	}
-}
-
 func KeyEnv(env cfg.Env) Option {
 	return func(o *OptSet) {
 		o.keyEnv = env
+	}
+}
+
+func Singleton() Option {
+	return func(o *OptSet) {
+		o.singleton = true
 	}
 }
 
