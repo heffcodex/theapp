@@ -3,7 +3,7 @@ package theapp
 import (
 	"context"
 	"fmt"
-	"github.com/heffcodex/theapp/cfg"
+	"github.com/heffcodex/theapp/tcfg"
 	"github.com/heffcodex/zapex"
 	"sync"
 
@@ -16,7 +16,7 @@ import (
 type CloseFn func(context.Context) error
 
 type IApp interface {
-	IConfig() cfg.IConfig
+	IConfig() tcfg.IConfig
 	IsDebug() bool
 	L() *zap.Logger
 	AddCloser(fns ...CloseFn)
@@ -26,13 +26,13 @@ type IApp interface {
 var _ IApp = (*App)(nil)
 
 type App struct {
-	cfg       cfg.IConfig
+	cfg       tcfg.IConfig
 	closeFns  []CloseFn
 	closeLock sync.Mutex
 	log       *zap.Logger
 }
 
-func NewApp(cfg cfg.IConfig) (*App, error) {
+func NewApp(cfg tcfg.IConfig) (*App, error) {
 	log, err := zapex.New(cfg.LogLevel())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create logger")
@@ -58,8 +58,8 @@ func NewApp(cfg cfg.IConfig) (*App, error) {
 	}, nil
 }
 
-func (a *App) IConfig() cfg.IConfig { return a.cfg }
-func (a *App) IsDebug() bool        { return a.cfg.LogLevel() == zap.DebugLevel.String() }
+func (a *App) IConfig() tcfg.IConfig { return a.cfg }
+func (a *App) IsDebug() bool         { return a.cfg.LogLevel() == zap.DebugLevel.String() }
 
 func (a *App) L() *zap.Logger { return a.log }
 

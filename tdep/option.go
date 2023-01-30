@@ -1,12 +1,12 @@
-package dep
+package tdep
 
 import (
-	"github.com/heffcodex/theapp/cfg"
+	"github.com/heffcodex/theapp/tcfg"
 	"go.uber.org/zap"
 )
 
 type OptSet struct {
-	env       cfg.Env
+	env       tcfg.Env
 	singleton bool
 	debug     bool
 	debugLog  *zap.Logger
@@ -24,14 +24,14 @@ func newOptSet(options ...Option) OptSet {
 	return opts
 }
 
-func (o *OptSet) Env() cfg.Env             { return o.env }
+func (o *OptSet) Env() tcfg.Env            { return o.env }
 func (o *OptSet) IsSingleton() bool        { return o.singleton }
 func (o *OptSet) IsDebug() bool            { return o.debug }
 func (o *OptSet) DebugLogger() *zap.Logger { return o.debugLog }
 
 type Option func(*OptSet)
 
-func Env(env cfg.Env) Option {
+func Env(env tcfg.Env) Option {
 	return func(o *OptSet) {
 		o.env = env
 	}
