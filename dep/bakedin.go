@@ -33,7 +33,7 @@ func NewBunPostgres(
 	onTuneBunDB func(db *bun.DB),
 	options ...Option,
 ) *D[*bun.DB] {
-	resolve := func(opts OptSet) (*bun.DB, error) {
+	resolve := func(o OptSet) (*bun.DB, error) {
 		conn := pgdriver.NewConnector(pgdriver.WithDSN(cfg.DSN))
 		if onTuneConnector != nil {
 			onTuneConnector(conn)
@@ -50,11 +50,11 @@ func NewBunPostgres(
 			onTuneBunDB(bunDB)
 		}
 
-		bunLogger, _ := zap.NewStdLogAt(opts.debugLog.Named("bun"), zap.DebugLevel)
+		bunLogger, _ := zap.NewStdLogAt(o.debugLog.Named("bun"), zap.DebugLevel)
 		bunDB.AddQueryHook(
 			bundebug.NewQueryHook(
-				bundebug.WithEnabled(opts.IsDebug()),
-				bundebug.WithVerbose(opts.IsDebug()),
+				bundebug.WithEnabled(o.IsDebug()),
+				bundebug.WithVerbose(o.IsDebug()),
 				bundebug.WithWriter(bunLogger.Writer()),
 			),
 		)
@@ -73,9 +73,9 @@ type GRPCConfig struct {
 }
 
 func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
-	resolve := func(opts OptSet) (*grpc.ClientConn, error) {
-		if opts.IsDebug() {
-			debugLog := opts.DebugLogger().Named("grpc")
+	resolve := func(o OptSet) (*grpc.ClientConn, error) {
+		if o.IsDebug() {
+			debugLog := o.DebugLogger().Named("grpc")
 			debugLogDecider := func(string, error) bool { return true }
 			debugLogLevelFunc := func(codes.Code) zapcore.Level { return zapcore.DebugLevel }
 
@@ -113,15 +113,19 @@ type Redis struct {
 }
 
 func (r *Redis) KeyPrefix() string {
-	return r.keyGroup + ":"
+	return r.key("")
 }
 
 func (r *Redis) Key(parts ...string) string {
+	return r.key(parts...)
+}
+
+func (r *Redis) key(parts ...string) string {
 	return strings.Join(append([]string{r.keyGroup}, parts...), ":")
 }
 
 func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
-	resolve := func(OptSet) (*Redis, error) {
+	resolve := func(o OptSet) (*Redis, error) {
 		opts, err := redis.ParseURL(cfg.DSN)
 		if err != nil {
 			return nil, errors.Wrap(err, "can't parse DSN as options")
@@ -146,9 +150,14 @@ func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
 			}
 		}
 
+		keyGroup := cfg.KeyGroup
+		if o.keyEnv != "" {
+			keyGroup = keyGroup + ":" + o.keyEnv.String()
+		}
+
 		return &Redis{
 			Client:   redis.NewClient(opts),
-			keyGroup: cfg.KeyGroup,
+			keyGroup: keyGroup,
 		}, nil
 	}
 
