@@ -23,7 +23,7 @@ import (
 
 type BunConfigPostgres struct {
 	DSN            string `mapstructure:"dsn"`
-	MaxConnections int    `mapstructure:"max_connections"`
+	MaxConnections int    `mapstructure:"maxConnections"`
 }
 
 func NewBunPostgres(
@@ -104,7 +104,7 @@ func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) *
 type RedisConfig struct {
 	DSN      string `mapstructure:"dsn"`
 	Cert     string `mapstructure:"cert"`
-	KeyGroup string `mapstructure:"key_group"`
+	KeyGroup string `mapstructure:"keyGroup"`
 }
 
 type Redis struct {

@@ -10,8 +10,9 @@ func (e Env) String() string {
 
 const (
 	EnvDev   Env = "dev"
-	EnvStage Env = "stage"
-	EnvProd  Env = "prod"
+	EnvTest  Env = "test"
+	EnvStage Env = "staging"
+	EnvProd  Env = "production"
 )
 
 type IConfig interface {
@@ -20,7 +21,6 @@ type IConfig interface {
 	AppEnv() Env
 	LogLevel() string
 	ShutdownTimeout() time.Duration
-	FrontendURL() string
 
 	Load() error
 }
