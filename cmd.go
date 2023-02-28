@@ -28,12 +28,19 @@ func (c *Cmd) Add(commands ...*cobra.Command) {
 
 func (c *Cmd) Execute() error {
 	defer zapex.OnRecover(func(err error) { zapex.Default().Fatal("panic", zap.Error(err)) })()
-	return c.makeRoot().Execute()
+
+	shut := newShutter()
+	root := c.makeRoot(shut)
+
+	if err := root.Execute(); err != nil {
+		shut.shutdown()
+		return err
+	}
+
+	return nil
 }
 
-func (c *Cmd) makeRoot() *cobra.Command {
-	shutter := newShutter()
-
+func (c *Cmd) makeRoot(shut *shutter) *cobra.Command {
 	root := &cobra.Command{
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			app, err := c.newAppFn()
@@ -41,15 +48,15 @@ func (c *Cmd) makeRoot() *cobra.Command {
 				return errors.Wrap(err, "can't create app")
 			}
 
-			cancelFn := cmdInject(cmd, app, shutter)
+			cancelFn := cmdInject(cmd, app, shut)
 			timeout := app.IConfig().ShutdownTimeout()
 
-			shutter.setup(app.L(), cancelFn, app.Close, timeout)
+			shut.setup(app.L(), cancelFn, app.Close, timeout)
 
 			return nil
 		},
 		PersistentPostRun: func(*cobra.Command, []string) {
-			shutter.shutdown()
+			shut.shutdown()
 		},
 	}
 

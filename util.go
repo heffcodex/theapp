@@ -26,11 +26,11 @@ func getShutter(cmd *cobra.Command) *shutter {
 	return cmd.Context().Value(ShutterCmdContextKey).(*shutter)
 }
 
-func cmdInject[A IApp](cmd *cobra.Command, app A, shutter *shutter) (cancel context.CancelFunc) {
+func cmdInject[A IApp](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
 	ctx := cmd.Context()
 
 	ctx = context.WithValue(ctx, AppCmdContextKey, app)
-	ctx = context.WithValue(ctx, ShutterCmdContextKey, shutter)
+	ctx = context.WithValue(ctx, ShutterCmdContextKey, shut)
 
 	ctx, cancel = context.WithCancel(ctx)
 	cmd.SetContext(ctx)
