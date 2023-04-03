@@ -13,14 +13,18 @@ import (
 )
 
 type shutter struct {
-	log        *zap.Logger
-	cancelFn   context.CancelFunc
-	onShutdown CloseFn
-	timeout    time.Duration
+	// set by newShutter
 	signals    []os.Signal
 	notifyChan chan os.Signal
 	hasWaiter  atomic.Bool
 	inShutdown atomic.Bool
+
+	// set by setup
+	wasSetup   atomic.Bool
+	log        *zap.Logger
+	cancelFn   context.CancelFunc
+	onShutdown CloseFn
+	timeout    time.Duration
 }
 
 func newShutter(signals ...os.Signal) *shutter {
@@ -34,6 +38,10 @@ func newShutter(signals ...os.Signal) *shutter {
 }
 
 func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, onShutdown CloseFn, timeout time.Duration) *shutter {
+	if s.wasSetup.CompareAndSwap(false, true) {
+		panic("shutter setup called twice")
+	}
+
 	if timeout <= 0 {
 		timeout = 5 * time.Second
 	}
@@ -65,7 +73,7 @@ func (s *shutter) waitInterrupt() {
 }
 
 func (s *shutter) shutdown() {
-	if !s.inShutdown.CompareAndSwap(false, true) {
+	if !s.wasSetup.Load() || !s.inShutdown.CompareAndSwap(false, true) {
 		return
 	}
 
