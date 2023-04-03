@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-type DRedis *D[*Redis]
-
 type RedisConfig struct {
 	DSN      string `mapstructure:"dsn"`
 	Cert     string `mapstructure:"cert"`
@@ -34,7 +32,7 @@ func (r *Redis) key(parts ...string) string {
 	return strings.Join(append([]string{r.keyGroup}, parts...), ":")
 }
 
-func NewRedis(cfg RedisConfig, options ...Option) DRedis {
+func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
 	resolve := func(o OptSet) (*Redis, error) {
 		opts, err := redis.ParseURL(cfg.DSN)
 		if err != nil {
