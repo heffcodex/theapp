@@ -38,7 +38,7 @@ func newShutter(signals ...os.Signal) *shutter {
 }
 
 func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, onShutdown CloseFn, timeout time.Duration) *shutter {
-	if s.wasSetup.CompareAndSwap(false, true) {
+	if !s.wasSetup.CompareAndSwap(false, true) {
 		panic("shutter setup called twice")
 	}
 
