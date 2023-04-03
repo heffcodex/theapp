@@ -24,7 +24,7 @@ type ResolveFn[T any] func(opts OptSet) (T, error)
 
 type D[T any] struct {
 	l       sync.Mutex
-	name    string
+	typ     string
 	resolve ResolveFn[T]
 	opts    OptSet
 
@@ -40,7 +40,7 @@ func New[T any](resolve ResolveFn[T], options ...Option) *D[T] {
 	}
 
 	d := &D[T]{
-		name:    fmt.Sprintf("dep(%s)", tof.String()),
+		typ:     fmt.Sprintf("dep(%s)", tof.String()),
 		resolve: resolve,
 		opts:    newOptSet(options...),
 	}
@@ -119,6 +119,6 @@ func (d *D[T]) Close(ctx context.Context) error {
 
 func (d *D[T]) debugWrite(msg string) {
 	if d.opts.debug {
-		d.opts.debugLog.Debug(msg, zap.String("name", d.name))
+		d.opts.debugLog.Debug(msg, zap.String("typ", d.typ))
 	}
 }
