@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+type DBun *D[*bun.DB]
+
 type BunConfigPostgres struct {
 	DSN            string `mapstructure:"dsn"`
 	MaxConnections int    `mapstructure:"maxConnections"`
@@ -20,7 +22,7 @@ func NewBunPostgres(
 	onTuneSQLDB func(db *sql.DB),
 	onTuneBunDB func(db *bun.DB),
 	options ...Option,
-) *D[*bun.DB] {
+) DBun {
 	resolve := func(o OptSet) (*bun.DB, error) {
 		conn := pgdriver.NewConnector(pgdriver.WithDSN(cfg.DSN))
 		if onTuneConnector != nil {

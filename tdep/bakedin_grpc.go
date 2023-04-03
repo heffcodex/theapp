@@ -8,12 +8,14 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+type DGRPC *D[*grpc.ClientConn]
+
 type GRPCConfig struct {
 	Host string `mapstructure:"host"`
 	Port uint16 `mapstructure:"port"`
 }
 
-func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
+func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) DGRPC {
 	resolve := func(o OptSet) (*grpc.ClientConn, error) {
 		if o.IsDebug() {
 			debugLog := o.DebugLogger().Named("grpc")
