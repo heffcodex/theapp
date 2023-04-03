@@ -1,8 +1,8 @@
 package theapp
 
 import (
+	"fmt"
 	"github.com/heffcodex/zapex"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -45,7 +45,7 @@ func (c *Cmd) makeRoot(shut *shutter) *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			app, err := c.newAppFn()
 			if err != nil {
-				return errors.Wrap(err, "can't create app")
+				return fmt.Errorf("create app: %w", err)
 			}
 
 			cancelFn := cmdInject(cmd, app, shut)

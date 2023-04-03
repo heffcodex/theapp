@@ -7,7 +7,6 @@ import (
 	"github.com/heffcodex/zapex"
 	"sync"
 
-	"github.com/pkg/errors"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -35,7 +34,7 @@ type App struct {
 func NewApp(cfg tcfg.IConfig) (*App, error) {
 	log, err := zapex.New(cfg.LogLevel())
 	if err != nil {
-		return nil, errors.Wrap(err, "can't create logger")
+		return nil, fmt.Errorf("create logger: %w", err)
 	}
 
 	zapex.SetDefault(log)
@@ -49,7 +48,7 @@ func NewApp(cfg tcfg.IConfig) (*App, error) {
 		),
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't set maxprocs")
+		return nil, fmt.Errorf("set maxprocs: %w", err)
 	}
 
 	return &App{

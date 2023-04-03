@@ -2,8 +2,9 @@ package tdep
 
 import (
 	"crypto/x509"
+	"errors"
+	"fmt"
 	"github.com/go-redis/redis/v8"
-	"github.com/pkg/errors"
 	"os"
 	"strings"
 )
@@ -35,7 +36,7 @@ func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
 	resolve := func(o OptSet) (*Redis, error) {
 		opts, err := redis.ParseURL(cfg.DSN)
 		if err != nil {
-			return nil, errors.Wrap(err, "can't parse DSN as options")
+			return nil, fmt.Errorf("parse DSN: %w", err)
 		}
 
 		if opts.TLSConfig != nil {
@@ -44,12 +45,12 @@ func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
 			if cfg.Cert != "" {
 				ca, err := os.ReadFile(cfg.Cert)
 				if err != nil {
-					return nil, errors.Wrap(err, "can't read root CA")
+					return nil, fmt.Errorf("read cert: %w", err)
 				}
 
 				rootCAs := x509.NewCertPool()
 				if !rootCAs.AppendCertsFromPEM(ca) {
-					return nil, errors.New("can't append root CA")
+					return nil, errors.New("append cert")
 				}
 
 				opts.TLSConfig.InsecureSkipVerify = false

@@ -2,7 +2,7 @@ package theapp
 
 import (
 	"context"
-	"github.com/pkg/errors"
+	"errors"
 	"os"
 	"os/signal"
 	"sync/atomic"
