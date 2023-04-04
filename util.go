@@ -13,12 +13,12 @@ const (
 	ShutterCmdContextKey = "theapp.shutter"
 )
 
-func GetApp[C tcfg.IConfig](cmd *cobra.Command) IApp[C] {
-	return getApp[C](cmd)
+func GetApp[C tcfg.IConfig, A IApp[C]](cmd *cobra.Command) A {
+	return getApp[C, A](cmd)
 }
 
-func getApp[C tcfg.IConfig](cmd *cobra.Command) IApp[C] {
-	return cmd.Context().Value(AppCmdContextKey).(IApp[C])
+func getApp[C tcfg.IConfig, A IApp[C]](cmd *cobra.Command) A {
+	return cmd.Context().Value(AppCmdContextKey).(A)
 }
 
 func WaitInterrupt(cmd *cobra.Command) {
@@ -29,7 +29,7 @@ func getShutter(cmd *cobra.Command) *shutter {
 	return cmd.Context().Value(ShutterCmdContextKey).(*shutter)
 }
 
-func cmdInject[C tcfg.IConfig](cmd *cobra.Command, app IApp[C], shut *shutter) (cancel context.CancelFunc) {
+func cmdInject[C tcfg.IConfig, A IApp[C]](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
 	ctx := cmd.Context()
 
 	ctx = context.WithValue(ctx, AppCmdContextKey, app)

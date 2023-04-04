@@ -10,26 +10,26 @@ import (
 	"github.com/heffcodex/theapp/tcfg"
 )
 
-type NewAppFn[C tcfg.IConfig] func() (IApp[C], error)
+type NewAppFn[C tcfg.IConfig, A IApp[C]] func() (A, error)
 
-type Cmd[C tcfg.IConfig] struct {
-	newAppFn NewAppFn[C]
+type Cmd[C tcfg.IConfig, A IApp[C]] struct {
+	newAppFn NewAppFn[C, A]
 	opts     []CmdOption
 	commands []*cobra.Command
 }
 
-func NewCmd[C tcfg.IConfig](newAppFn NewAppFn[C], opts ...CmdOption) *Cmd[C] {
-	return &Cmd[C]{
+func NewCmd[C tcfg.IConfig, A IApp[C]](newAppFn NewAppFn[C, A], opts ...CmdOption) *Cmd[C, A] {
+	return &Cmd[C, A]{
 		newAppFn: newAppFn,
 		opts:     opts,
 	}
 }
 
-func (c *Cmd[C]) Add(commands ...*cobra.Command) {
+func (c *Cmd[C, A]) Add(commands ...*cobra.Command) {
 	c.commands = append(c.commands, commands...)
 }
 
-func (c *Cmd[C]) Execute() error {
+func (c *Cmd[C, A]) Execute() error {
 	defer zapex.OnRecover(func(err error) { zapex.Default().Fatal("panic", zap.Error(err)) })()
 
 	shut := newShutter()
@@ -43,7 +43,7 @@ func (c *Cmd[C]) Execute() error {
 	return nil
 }
 
-func (c *Cmd[C]) makeRoot(shut *shutter) *cobra.Command {
+func (c *Cmd[C, A]) makeRoot(shut *shutter) *cobra.Command {
 	root := &cobra.Command{
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			app, err := c.newAppFn()
@@ -51,7 +51,7 @@ func (c *Cmd[C]) makeRoot(shut *shutter) *cobra.Command {
 				return fmt.Errorf("create app: %w", err)
 			}
 
-			cancelFn := cmdInject(cmd, app, shut)
+			cancelFn := cmdInject[C, A](cmd, app, shut)
 			timeout := app.Config().ShutdownTimeout()
 
 			shut.setup(app.L(), cancelFn, app.Close, timeout)
