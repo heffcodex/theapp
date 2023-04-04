@@ -3,35 +3,26 @@ package theapp
 import (
 	"context"
 	"fmt"
-	"github.com/heffcodex/theapp/tcfg"
-	"github.com/heffcodex/zapex"
 	"sync"
 
+	"github.com/heffcodex/zapex"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+
+	"github.com/heffcodex/theapp/tcfg"
 )
 
 type CloseFn func(context.Context) error
 
-type IApp interface {
-	IConfig() tcfg.IConfig
-	IsDebug() bool
-	L() *zap.Logger
-	AddCloser(fns ...CloseFn)
-	Close(ctx context.Context) error
-}
-
-var _ IApp = (*App)(nil)
-
-type App struct {
-	cfg       tcfg.IConfig
+type App[C tcfg.IConfig] struct {
+	cfg       C
 	closeFns  []CloseFn
 	closeLock sync.Mutex
 	log       *zap.Logger
 }
 
-func NewApp(cfg tcfg.IConfig) (*App, error) {
+func NewApp[C tcfg.IConfig](cfg C) (*App[C], error) {
 	log, err := zapex.New(cfg.LogLevel())
 	if err != nil {
 		return nil, fmt.Errorf("create logger: %w", err)
@@ -51,25 +42,23 @@ func NewApp(cfg tcfg.IConfig) (*App, error) {
 		return nil, fmt.Errorf("set maxprocs: %w", err)
 	}
 
-	return &App{
+	return &App[C]{
 		cfg: cfg,
 		log: appLog,
 	}, nil
 }
 
-func (a *App) IConfig() tcfg.IConfig { return a.cfg }
-func (a *App) IsDebug() bool         { return a.cfg.LogLevel() == zap.DebugLevel.String() }
+func (a *App[C]) Config() C      { return a.cfg }
+func (a *App[C]) IsDebug() bool  { return a.cfg.LogLevel() == zap.DebugLevel.String() }
+func (a *App[C]) L() *zap.Logger { return a.log }
 
-func (a *App) L() *zap.Logger { return a.log }
-
-func (a *App) AddCloser(fns ...CloseFn) {
+func (a *App[C]) AddCloser(fns ...CloseFn) {
 	a.closeLock.Lock()
-	defer a.closeLock.Unlock()
-
 	a.closeFns = append(a.closeFns, fns...)
+	a.closeLock.Unlock()
 }
 
-func (a *App) Close(ctx context.Context) error {
+func (a *App[C]) Close(ctx context.Context) error {
 	a.closeLock.Lock()
 	defer a.closeLock.Unlock()
 

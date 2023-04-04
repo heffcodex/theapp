@@ -2,20 +2,18 @@ package tdep
 
 import (
 	"database/sql"
+
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/uptrace/bun/extra/bundebug"
 	"go.uber.org/zap"
+
+	"github.com/heffcodex/theapp/tcfg"
 )
 
-type BunConfigPostgres struct {
-	DSN            string `mapstructure:"dsn"`
-	MaxConnections int    `mapstructure:"maxConnections"`
-}
-
 func NewBunPostgres(
-	cfg BunConfigPostgres,
+	cfg tcfg.BunPostgres,
 	onTuneConnector func(conn *pgdriver.Connector),
 	onTuneSQLDB func(db *sql.DB),
 	onTuneBunDB func(db *bun.DB),

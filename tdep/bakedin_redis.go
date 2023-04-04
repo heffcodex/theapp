@@ -4,16 +4,13 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"os"
 	"strings"
-)
 
-type RedisConfig struct {
-	DSN      string `mapstructure:"dsn"`
-	Cert     string `mapstructure:"cert"`
-	KeyGroup string `mapstructure:"keyGroup"`
-}
+	"github.com/redis/go-redis/v9"
+
+	"github.com/heffcodex/theapp/tcfg"
+)
 
 type Redis struct {
 	*redis.Client
@@ -32,7 +29,7 @@ func (r *Redis) key(parts ...string) string {
 	return strings.Join(append([]string{r.keyGroup}, parts...), ":")
 }
 
-func NewRedis(cfg RedisConfig, options ...Option) *D[*Redis] {
+func NewRedis(cfg tcfg.Redis, options ...Option) *D[*Redis] {
 	resolve := func(o OptSet) (*Redis, error) {
 		opts, err := redis.ParseURL(cfg.DSN)
 		if err != nil {

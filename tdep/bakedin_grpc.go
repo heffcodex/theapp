@@ -2,18 +2,16 @@ package tdep
 
 import (
 	"fmt"
+
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"github.com/heffcodex/theapp/tcfg"
 )
 
-type GRPCConfig struct {
-	Host string `mapstructure:"host"`
-	Port uint16 `mapstructure:"port"`
-}
-
-func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
+func NewGRPC(cfg tcfg.GRPCClient, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
 	resolve := func(o OptSet) (*grpc.ClientConn, error) {
 		if o.IsDebug() {
 			debugLog := o.DebugLogger().Named("grpc")

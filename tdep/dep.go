@@ -3,9 +3,10 @@ package tdep
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"reflect"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 var (

@@ -1,8 +1,9 @@
 package tdep
 
 import (
-	"github.com/heffcodex/theapp/tcfg"
 	"go.uber.org/zap"
+
+	"github.com/heffcodex/theapp/tcfg"
 )
 
 type OptSet struct {
