@@ -22,7 +22,12 @@ type App[C tcfg.IConfig] struct {
 	log       *zap.Logger
 }
 
-func NewApp[C tcfg.IConfig](cfg C) (*App[C], error) {
+func New[C tcfg.IConfig]() (*App[C], error) {
+	var cfg C
+	if err := cfg.Load(); err != nil {
+		return nil, fmt.Errorf("load config: %w", err)
+	}
+
 	log, err := zapex.New(cfg.LogLevel())
 	if err != nil {
 		return nil, fmt.Errorf("create logger: %w", err)
