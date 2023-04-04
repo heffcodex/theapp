@@ -19,7 +19,7 @@ type Cmd[C tcfg.IConfig, A theapp.IApp[C]] struct {
 	commands []*cobra.Command
 }
 
-func NewCmd[C tcfg.IConfig, A theapp.IApp[C]](newAppFn NewAppFn[C, A], opts ...CmdOption) *Cmd[C, A] {
+func New[C tcfg.IConfig, A theapp.IApp[C]](newAppFn NewAppFn[C, A], opts ...CmdOption) *Cmd[C, A] {
 	return &Cmd[C, A]{
 		newAppFn: newAppFn,
 		opts:     opts,
