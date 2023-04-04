@@ -37,8 +37,8 @@ type App[C tcfg.IConfig] struct {
 }
 
 func New[C tcfg.IConfig]() (*App[C], error) {
-	var cfg C
-	if err := cfg.Load(); err != nil {
+	cfg, err := tcfg.LoadConfig[C]()
+	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
 
@@ -93,6 +93,8 @@ func (a *App[C]) Close(ctx context.Context) error {
 				errs = append(errs, err)
 			}
 		}
+
+		a.closed = true
 
 		return multierr.Combine(errs...)
 	})

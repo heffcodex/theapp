@@ -1,4 +1,4 @@
-package theapp
+package tcmd
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+
+	"github.com/heffcodex/theapp"
 )
 
 type shutter struct {
@@ -23,7 +25,7 @@ type shutter struct {
 	wasSetup   atomic.Bool
 	log        *zap.Logger
 	cancelFn   context.CancelFunc
-	onShutdown CloseFn
+	onShutdown theapp.CloseFn
 	timeout    time.Duration
 }
 
@@ -37,7 +39,7 @@ func newShutter(signals ...os.Signal) *shutter {
 	}
 }
 
-func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, onShutdown CloseFn, timeout time.Duration) *shutter {
+func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, onShutdown theapp.CloseFn, timeout time.Duration) *shutter {
 	if !s.wasSetup.CompareAndSwap(false, true) {
 		panic("shutter setup called twice")
 	}

@@ -1,10 +1,11 @@
-package theapp
+package tcmd
 
 import (
 	"context"
 
 	"github.com/spf13/cobra"
 
+	"github.com/heffcodex/theapp"
 	"github.com/heffcodex/theapp/tcfg"
 )
 
@@ -13,11 +14,11 @@ const (
 	ShutterCmdContextKey = "theapp.shutter"
 )
 
-func GetApp[C tcfg.IConfig, A IApp[C]](cmd *cobra.Command) A {
+func App[C tcfg.IConfig, A theapp.IApp[C]](cmd *cobra.Command) A {
 	return getApp[C, A](cmd)
 }
 
-func getApp[C tcfg.IConfig, A IApp[C]](cmd *cobra.Command) A {
+func getApp[C tcfg.IConfig, A theapp.IApp[C]](cmd *cobra.Command) A {
 	return cmd.Context().Value(AppCmdContextKey).(A)
 }
 
@@ -29,7 +30,7 @@ func getShutter(cmd *cobra.Command) *shutter {
 	return cmd.Context().Value(ShutterCmdContextKey).(*shutter)
 }
 
-func cmdInject[C tcfg.IConfig, A IApp[C]](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
+func cmdInject[C tcfg.IConfig, A theapp.IApp[C]](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
 	ctx := cmd.Context()
 
 	ctx = context.WithValue(ctx, AppCmdContextKey, app)

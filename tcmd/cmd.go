@@ -1,4 +1,4 @@
-package theapp
+package tcmd
 
 import (
 	"fmt"
@@ -7,18 +7,19 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	"github.com/heffcodex/theapp"
 	"github.com/heffcodex/theapp/tcfg"
 )
 
-type NewAppFn[C tcfg.IConfig, A IApp[C]] func() (A, error)
+type NewAppFn[C tcfg.IConfig, A theapp.IApp[C]] func() (A, error)
 
-type Cmd[C tcfg.IConfig, A IApp[C]] struct {
+type Cmd[C tcfg.IConfig, A theapp.IApp[C]] struct {
 	newAppFn NewAppFn[C, A]
 	opts     []CmdOption
 	commands []*cobra.Command
 }
 
-func NewCmd[C tcfg.IConfig, A IApp[C]](newAppFn NewAppFn[C, A], opts ...CmdOption) *Cmd[C, A] {
+func NewCmd[C tcfg.IConfig, A theapp.IApp[C]](newAppFn NewAppFn[C, A], opts ...CmdOption) *Cmd[C, A] {
 	return &Cmd[C, A]{
 		newAppFn: newAppFn,
 		opts:     opts,
