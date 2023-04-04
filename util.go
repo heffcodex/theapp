@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
+
+	"github.com/heffcodex/theapp/tcfg"
 )
 
 const (
@@ -11,12 +13,12 @@ const (
 	ShutterCmdContextKey = "theapp.shutter"
 )
 
-func GetApp[A IApp](cmd *cobra.Command) A {
-	return getApp[A](cmd)
+func GetApp[C tcfg.IConfig](cmd *cobra.Command) IApp[C] {
+	return getApp[C](cmd)
 }
 
-func getApp[A IApp](cmd *cobra.Command) A {
-	return cmd.Context().Value(AppCmdContextKey).(A)
+func getApp[C tcfg.IConfig](cmd *cobra.Command) IApp[C] {
+	return cmd.Context().Value(AppCmdContextKey).(IApp[C])
 }
 
 func WaitInterrupt(cmd *cobra.Command) {
@@ -27,7 +29,7 @@ func getShutter(cmd *cobra.Command) *shutter {
 	return cmd.Context().Value(ShutterCmdContextKey).(*shutter)
 }
 
-func cmdInject[A IApp](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
+func cmdInject[C tcfg.IConfig](cmd *cobra.Command, app IApp[C], shut *shutter) (cancel context.CancelFunc) {
 	ctx := cmd.Context()
 
 	ctx = context.WithValue(ctx, AppCmdContextKey, app)

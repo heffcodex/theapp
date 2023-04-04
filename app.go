@@ -15,6 +15,17 @@ import (
 
 type CloseFn func(context.Context) error
 
+type IApp[C tcfg.IConfig] interface {
+	Config() C
+	IsDebug() bool
+	L() *zap.Logger
+	ExternalLocked(f func())
+	AddCloser(fns ...CloseFn)
+	Close(ctx context.Context) error
+}
+
+var _ IApp[tcfg.IConfig] = (*App[tcfg.IConfig])(nil)
+
 type App[C tcfg.IConfig] struct {
 	cfg     C
 	log     *zap.Logger
