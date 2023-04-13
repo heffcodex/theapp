@@ -42,3 +42,12 @@ func (k Key) Bytes() ([]byte, error) {
 
 	return b, nil
 }
+
+func (k Key) MustBytes() []byte {
+	b, err := k.Bytes()
+	if err != nil {
+		panic(err)
+	}
+
+	return b
+}
