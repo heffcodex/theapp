@@ -36,12 +36,18 @@ func NewBunPostgres(
 			onTuneBunDB(bunDB)
 		}
 
-		bunLogger, _ := zap.NewStdLogAt(o.debugLog.Named("bun"), zap.DebugLevel)
+		logLevel := zap.ErrorLevel
+		if o.IsDebug() {
+			logLevel = zap.DebugLevel
+		}
+
+		log := o.Log().Named("bun")
+		stdLog, _ := zap.NewStdLogAt(log, logLevel)
+
 		bunDB.AddQueryHook(
 			bundebug.NewQueryHook(
-				bundebug.WithEnabled(o.IsDebug()),
 				bundebug.WithVerbose(o.IsDebug()),
-				bundebug.WithWriter(bunLogger.Writer()),
+				bundebug.WithWriter(stdLog.Writer()),
 			),
 		)
 

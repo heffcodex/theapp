@@ -27,6 +27,7 @@ require (
 	github.com/getsentry/sentry-go v0.20.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/heffcodex/redix v0.0.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/klauspost/compress v1.16.4 // indirect

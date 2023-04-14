@@ -37,7 +37,7 @@ func (c *Cmd[C, A]) Execute() error {
 	root := c.makeRoot(shut)
 
 	if err := root.Execute(); err != nil {
-		shut.shutdown()
+		shut.down()
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (c *Cmd[C, A]) makeRoot(shut *shutter) *cobra.Command {
 			return nil
 		},
 		PersistentPostRun: func(*cobra.Command, []string) {
-			shut.shutdown()
+			shut.down()
 		},
 	}
 

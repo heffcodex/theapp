@@ -74,7 +74,7 @@ func (s *shutter) waitInterrupt() {
 	}
 }
 
-func (s *shutter) shutdown() {
+func (s *shutter) down() {
 	if !s.wasSetup.Load() || !s.inShutdown.CompareAndSwap(false, true) {
 		return
 	}

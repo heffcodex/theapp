@@ -4,33 +4,20 @@ import (
 	"fmt"
 
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"github.com/heffcodex/theapp/tcfg"
 )
 
 func NewGRPC(cfg tcfg.GRPCClient, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
 	resolve := func(o OptSet) (*grpc.ClientConn, error) {
-		if o.IsDebug() {
-			debugLog := o.DebugLogger().Named("grpc")
-			debugLogDecider := func(string, error) bool { return true }
-			debugLogLevelFunc := func(codes.Code) zapcore.Level { return zapcore.DebugLevel }
+		log := o.Log().Named("grpc")
+		logDecider := func(_ string, err error) bool { return o.IsDebug() || err != nil }
 
-			dialOptions = append(dialOptions,
-				grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(
-					debugLog,
-					grpc_zap.WithDecider(debugLogDecider),
-					grpc_zap.WithLevels(debugLogLevelFunc),
-				)),
-				grpc.WithStreamInterceptor(grpc_zap.StreamClientInterceptor(
-					debugLog,
-					grpc_zap.WithDecider(debugLogDecider),
-					grpc_zap.WithLevels(debugLogLevelFunc),
-				)),
-			)
-		}
+		dialOptions = append(dialOptions,
+			grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(log, grpc_zap.WithDecider(logDecider))),
+			grpc.WithStreamInterceptor(grpc_zap.StreamClientInterceptor(log, grpc_zap.WithDecider(logDecider))),
+		)
 
 		return grpc.Dial(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port), dialOptions...)
 	}

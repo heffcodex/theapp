@@ -56,11 +56,15 @@ func LoadConfig[C IConfig]() (C, error) {
 		return *new(C), fmt.Errorf("read: %w", err)
 	}
 
-	var cfg C
+	var config C
 
-	if err := v.UnmarshalExact(&cfg); err != nil {
+	if err := v.UnmarshalExact(&config); err != nil {
 		return *new(C), fmt.Errorf("unmarshal exact: %w", err)
 	}
 
-	return cfg, nil
+	if err := config.AppKey().Validate(); err != nil {
+		return *new(C), fmt.Errorf("validate app key: %w", err)
+	}
+
+	return config, nil
 }

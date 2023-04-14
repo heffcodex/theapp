@@ -15,6 +15,10 @@ type App struct {
 
 type Env string
 
+func (e Env) IsEmpty() bool {
+	return e == ""
+}
+
 func (e Env) String() string {
 	return string(e)
 }
@@ -28,11 +32,25 @@ const (
 
 type Key string
 
+func (k Key) Validate() error {
+	_, err := k.bytes()
+	return err
+}
+
 func (k Key) String() string {
 	return string(k)
 }
 
-func (k Key) Bytes() ([]byte, error) {
+func (k Key) Bytes() []byte {
+	b, err := k.bytes()
+	if err != nil {
+		panic(err)
+	}
+
+	return b
+}
+
+func (k Key) bytes() ([]byte, error) {
 	b, err := base64.StdEncoding.DecodeString(string(k))
 	if err != nil {
 		return nil, fmt.Errorf("decode: %w", err)
@@ -41,13 +59,4 @@ func (k Key) Bytes() ([]byte, error) {
 	}
 
 	return b, nil
-}
-
-func (k Key) MustBytes() []byte {
-	b, err := k.Bytes()
-	if err != nil {
-		panic(err)
-	}
-
-	return b
 }
