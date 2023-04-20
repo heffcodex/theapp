@@ -27,6 +27,7 @@ func NewBunPostgres(
 
 		sqlDB := sql.OpenDB(conn)
 		sqlDB.SetMaxOpenConns(cfg.MaxConnections)
+		sqlDB.SetConnMaxIdleTime(cfg.MaxIdleTimeSeconds())
 		if onTuneSQLDB != nil {
 			onTuneSQLDB(sqlDB)
 		}
