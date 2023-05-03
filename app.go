@@ -19,7 +19,7 @@ type IApp[C tcfg.IConfig] interface {
 	Config() C
 	IsDebug() bool
 	L() *zap.Logger
-	ExternalLocked(f func())
+	Safe(f func())
 	AddCloser(fns ...CloseFn)
 	Close(ctx context.Context) error
 }
@@ -27,9 +27,9 @@ type IApp[C tcfg.IConfig] interface {
 var _ IApp[tcfg.IConfig] = (*App[tcfg.IConfig])(nil)
 
 type App[C tcfg.IConfig] struct {
-	cfg     C
-	log     *zap.Logger
-	extLock sync.Mutex
+	cfg  C
+	log  *zap.Logger
+	lock sync.Mutex
 
 	closed    bool
 	closeFns  []CloseFn
@@ -71,21 +71,21 @@ func (a *App[C]) Config() C      { return a.cfg }
 func (a *App[C]) IsDebug() bool  { return a.cfg.LogLevel() == zap.DebugLevel.String() }
 func (a *App[C]) L() *zap.Logger { return a.log }
 
-func (a *App[C]) ExternalLocked(f func()) {
-	a.extLock.Lock()
-	defer a.extLock.Unlock()
+func (a *App[C]) Safe(f func()) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
 	f()
 }
 
 func (a *App[C]) AddCloser(fns ...CloseFn) {
-	_ = a.closeLocked(func() error {
+	_ = a.safeClose(func() error {
 		a.closeFns = append(a.closeFns, fns...)
 		return nil
 	})
 }
 
 func (a *App[C]) Close(ctx context.Context) error {
-	return a.closeLocked(func() error {
+	return a.safeClose(func() error {
 		errs := make([]error, 0, len(a.closeFns))
 
 		for i := len(a.closeFns) - 1; i >= 0; i-- {
@@ -100,7 +100,7 @@ func (a *App[C]) Close(ctx context.Context) error {
 	})
 }
 
-func (a *App[C]) closeLocked(f func() error) error {
+func (a *App[C]) safeClose(f func() error) error {
 	a.closeLock.Lock()
 	defer a.closeLock.Unlock()
 
