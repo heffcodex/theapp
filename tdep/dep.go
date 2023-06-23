@@ -36,12 +36,14 @@ type D[T any] struct {
 
 func New[T any](resolve ResolveFn[T], options ...Option) *D[T] {
 	tof := reflect.TypeOf(new(T)).Elem()
+	tofStr := tof.String()
+
 	if tof.Kind() != reflect.Pointer {
-		panic(fmt.Sprintf("type `%s` is not a pointer", tof.String()))
+		panic(fmt.Sprintf("type `%s` is not a pointer", tofStr))
 	}
 
 	d := &D[T]{
-		typ:     fmt.Sprintf("dep(%s)", tof.String()),
+		typ:     tofStr,
 		resolve: resolve,
 		opts:    newOptSet(options...),
 	}
