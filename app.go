@@ -2,12 +2,12 @@ package theapp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/heffcodex/zapex"
 	"go.uber.org/automaxprocs/maxprocs"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
 	"github.com/heffcodex/theapp/tcfg"
@@ -15,28 +15,26 @@ import (
 
 type CloseFn func(context.Context) error
 
-type IApp[C tcfg.IConfig] interface {
+type App[C tcfg.Config] interface {
 	Config() C
 	IsDebug() bool
 	L() *zap.Logger
-	Safe(f func())
 	AddCloser(fns ...CloseFn)
 	Close(ctx context.Context) error
 }
 
-var _ IApp[tcfg.IConfig] = (*App[tcfg.IConfig])(nil)
+var _ App[tcfg.Config] = (*Base[tcfg.Config])(nil)
 
-type App[C tcfg.IConfig] struct {
-	cfg  C
-	log  *zap.Logger
-	lock sync.Mutex
+type Base[C tcfg.Config] struct {
+	cfg C
+	log *zap.Logger
 
-	closed    bool
-	closeFns  []CloseFn
-	closeLock sync.Mutex
+	closed     bool
+	closers    []CloseFn
+	closerLock sync.Mutex
 }
 
-func New[C tcfg.IConfig]() (*App[C], error) {
+func New[C tcfg.Config]() (*Base[C], error) {
 	cfg, err := tcfg.LoadConfig[C]()
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
@@ -61,48 +59,44 @@ func New[C tcfg.IConfig]() (*App[C], error) {
 		return nil, fmt.Errorf("set maxprocs: %w", err)
 	}
 
-	return &App[C]{
+	return &Base[C]{
 		cfg: cfg,
 		log: appLog,
 	}, nil
 }
 
-func (a *App[C]) Config() C      { return a.cfg }
-func (a *App[C]) IsDebug() bool  { return a.cfg.LogLevel() == zap.DebugLevel.String() }
-func (a *App[C]) L() *zap.Logger { return a.log }
+func (a *Base[C]) Config() C      { return a.cfg }
+func (a *Base[C]) IsDebug() bool  { return a.cfg.LogLevel() == zap.DebugLevel.String() }
+func (a *Base[C]) L() *zap.Logger { return a.log }
 
-func (a *App[C]) Safe(f func()) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	f()
-}
-
-func (a *App[C]) AddCloser(fns ...CloseFn) {
+func (a *Base[C]) AddCloser(fns ...CloseFn) {
 	_ = a.safeClose(func() error {
-		a.closeFns = append(a.closeFns, fns...)
+		a.closers = append(a.closers, fns...)
 		return nil
 	})
 }
 
-func (a *App[C]) Close(ctx context.Context) error {
+func (a *Base[C]) Close(ctx context.Context) error {
 	return a.safeClose(func() error {
-		errs := make([]error, 0, len(a.closeFns))
+		errs := make([]error, 0, len(a.closers))
 
-		for i := len(a.closeFns) - 1; i >= 0; i-- {
-			if err := a.closeFns[i](ctx); err != nil {
+		for i := len(a.closers) - 1; i >= 0; i-- {
+			closer := a.closers[i]
+
+			if err := closer(ctx); err != nil {
 				errs = append(errs, err)
 			}
 		}
 
 		a.closed = true
 
-		return multierr.Combine(errs...)
+		return errors.Join(errs...)
 	})
 }
 
-func (a *App[C]) safeClose(f func() error) error {
-	a.closeLock.Lock()
-	defer a.closeLock.Unlock()
+func (a *Base[C]) safeClose(f func() error) error {
+	a.closerLock.Lock()
+	defer a.closerLock.Unlock()
 
 	if a.closed {
 		panic("app is closed")

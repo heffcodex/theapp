@@ -2,18 +2,31 @@ package tdep
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/uptrace/bun/extra/bundebug"
 	"go.uber.org/zap"
-
-	"github.com/heffcodex/theapp/tcfg"
 )
 
+type BunConfig struct {
+	DSN            string `mapstructure:"dsn"`
+	MaxConnections int    `mapstructure:"maxConnections"`
+	MaxIdleTime    int    `mapstructure:"maxIdleTime"`
+}
+
+func (c *BunConfig) MaxIdleTimeSeconds() time.Duration {
+	if c.MaxIdleTime < 1 {
+		return 0
+	}
+
+	return time.Duration(c.MaxIdleTime) * time.Second
+}
+
 func NewBunPostgres(
-	cfg tcfg.BunPostgres,
+	cfg BunConfig,
 	onTuneConnector func(conn *pgdriver.Connector),
 	onTuneSQLDB func(db *sql.DB),
 	onTuneBunDB func(db *bun.DB),
@@ -28,6 +41,7 @@ func NewBunPostgres(
 		sqlDB := sql.OpenDB(conn)
 		sqlDB.SetMaxOpenConns(cfg.MaxConnections)
 		sqlDB.SetConnMaxIdleTime(cfg.MaxIdleTimeSeconds())
+
 		if onTuneSQLDB != nil {
 			onTuneSQLDB(sqlDB)
 		}

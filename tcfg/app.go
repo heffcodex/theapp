@@ -33,7 +33,7 @@ const (
 type Key string
 
 func (k Key) Validate() error {
-	_, err := k.bytes()
+	_, err := k.getBytes()
 	return err
 }
 
@@ -42,7 +42,7 @@ func (k Key) String() string {
 }
 
 func (k Key) Bytes() []byte {
-	b, err := k.bytes()
+	b, err := k.getBytes()
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +50,7 @@ func (k Key) Bytes() []byte {
 	return b
 }
 
-func (k Key) bytes() ([]byte, error) {
+func (k Key) getBytes() ([]byte, error) {
 	b, err := base64.StdEncoding.DecodeString(string(k))
 	if err != nil {
 		return nil, fmt.Errorf("decode: %w", err)

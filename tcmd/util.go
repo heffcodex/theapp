@@ -9,17 +9,17 @@ import (
 	"github.com/heffcodex/theapp/tcfg"
 )
 
-const (
-	AppCmdContextKey     = "theapp.app"
-	ShutterCmdContextKey = "theapp.shutter"
+type (
+	appKey     struct{}
+	shutterKey struct{}
 )
 
-func App[C tcfg.IConfig, A theapp.IApp[C]](cmd *cobra.Command) A {
+func App[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command) A {
 	return getApp[C, A](cmd)
 }
 
-func getApp[C tcfg.IConfig, A theapp.IApp[C]](cmd *cobra.Command) A {
-	return cmd.Context().Value(AppCmdContextKey).(A)
+func getApp[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command) A {
+	return cmd.Context().Value(appKey{}).(A)
 }
 
 func WaitInterrupt(cmd *cobra.Command) {
@@ -27,14 +27,14 @@ func WaitInterrupt(cmd *cobra.Command) {
 }
 
 func getShutter(cmd *cobra.Command) *shutter {
-	return cmd.Context().Value(ShutterCmdContextKey).(*shutter)
+	return cmd.Context().Value(shutterKey{}).(*shutter)
 }
 
-func cmdInject[C tcfg.IConfig, A theapp.IApp[C]](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
+func cmdInject[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
 	ctx := cmd.Context()
 
-	ctx = context.WithValue(ctx, AppCmdContextKey, app)
-	ctx = context.WithValue(ctx, ShutterCmdContextKey, shut)
+	ctx = context.WithValue(ctx, appKey{}, app)
+	ctx = context.WithValue(ctx, shutterKey{}, shut)
 
 	ctx, cancel = context.WithCancel(ctx)
 	cmd.SetContext(ctx)

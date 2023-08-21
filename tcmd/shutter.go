@@ -85,7 +85,7 @@ func (s *shutter) down() {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer func() {
 		cancel()
-		_ = s.log.Sync()
+		_ = s.log.Sync() //nolint: wsl // it's ok
 	}()
 
 	onShutdownErr := make(chan error)

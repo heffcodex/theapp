@@ -5,11 +5,14 @@ import (
 
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"google.golang.org/grpc"
-
-	"github.com/heffcodex/theapp/tcfg"
 )
 
-func NewGRPC(cfg tcfg.GRPCClient, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
+type GRPCConfig struct {
+	Host string `mapstructure:"host"`
+	Port uint16 `mapstructure:"port"`
+}
+
+func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
 	resolve := func(o OptSet) (*grpc.ClientConn, error) {
 		log := o.Log().Named("grpc")
 		logDecider := func(_ string, err error) bool { return o.IsDebug() || err != nil }
