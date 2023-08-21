@@ -16,40 +16,40 @@ type Config interface {
 	ShutdownTimeout() time.Duration
 
 	BeforeRead(v *viper.Viper) error
-	AfterRead(v *viper.Viper, c Config) error
+	AfterRead(v *viper.Viper) error
 }
 
-var _ Config = (*Base)(nil)
+var _ Config = (*BaseConfig)(nil)
 
-type Base struct {
+type BaseConfig struct {
 	App App `mapstructure:"app"`
 }
 
-func (c *Base) AppName() string {
+func (c BaseConfig) AppName() string {
 	return c.App.Name
 }
 
-func (c *Base) AppKey() Key {
+func (c BaseConfig) AppKey() Key {
 	return c.App.Key
 }
 
-func (c *Base) AppEnv() Env {
+func (c BaseConfig) AppEnv() Env {
 	return c.App.Env
 }
 
-func (c *Base) LogLevel() string {
+func (c BaseConfig) LogLevel() string {
 	return c.App.LogLevel
 }
 
-func (c *Base) ShutdownTimeout() time.Duration {
+func (c BaseConfig) ShutdownTimeout() time.Duration {
 	return time.Duration(c.App.ShutdownTimeout) * time.Second
 }
 
-func (*Base) BeforeRead(*viper.Viper) error {
+func (BaseConfig) BeforeRead(*viper.Viper) error {
 	return nil
 }
 
-func (c *Base) AfterRead(*viper.Viper, Config) error {
+func (c BaseConfig) AfterRead(*viper.Viper) error {
 	if err := c.AppKey().Validate(); err != nil {
 		return fmt.Errorf("validate app key: %w", err)
 	}
@@ -81,7 +81,7 @@ func LoadConfig[C Config]() (C, error) {
 		return *new(C), fmt.Errorf("unmarshal exact: %w", err)
 	}
 
-	if err := config.AfterRead(v, config); err != nil {
+	if err := config.AfterRead(v); err != nil {
 		return config, fmt.Errorf("after read: %w", err)
 	}
 
