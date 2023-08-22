@@ -10,8 +10,7 @@ import (
 )
 
 type (
-	appKey     struct{}
-	shutterKey struct{}
+	appKey struct{}
 )
 
 func App[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command) A {
@@ -22,19 +21,8 @@ func getApp[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command) A {
 	return cmd.Context().Value(appKey{}).(A)
 }
 
-func WaitInterrupt(cmd *cobra.Command) {
-	getShutter(cmd).waitInterrupt()
-}
-
-func getShutter(cmd *cobra.Command) *shutter {
-	return cmd.Context().Value(shutterKey{}).(*shutter)
-}
-
-func cmdInject[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
-	ctx := cmd.Context()
-
-	ctx = context.WithValue(ctx, appKey{}, app)
-	ctx = context.WithValue(ctx, shutterKey{}, shut)
+func cmdInject[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command, app A) (cancel context.CancelFunc) {
+	ctx := context.WithValue(cmd.Context(), appKey{}, app)
 
 	ctx, cancel = context.WithCancel(ctx)
 	cmd.SetContext(ctx)

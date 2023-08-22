@@ -17,8 +17,6 @@ import (
 type shutter struct {
 	// set by newShutter
 	signals    []os.Signal
-	notifyChan chan os.Signal
-	hasWaiter  atomic.Bool
 	inShutdown atomic.Bool
 
 	// set by setup
@@ -56,22 +54,17 @@ func (s *shutter) setup(log *zap.Logger, cancelFn context.CancelFunc, onShutdown
 	return s
 }
 
-func (s *shutter) waitInterrupt() {
-	firstWaiter := s.hasWaiter.CompareAndSwap(false, true)
+func (s *shutter) catchInterrupt() {
+	notifyChan := make(chan os.Signal, len(s.signals))
+	signal.Notify(notifyChan, s.signals...)
 
-	if firstWaiter {
-		s.notifyChan = make(chan os.Signal, len(s.signals))
-		signal.Notify(s.notifyChan, s.signals...)
-	}
+	<-notifyChan
 
-	<-s.notifyChan
+	signal.Stop(notifyChan)
+	close(notifyChan)
 
-	if firstWaiter {
-		signal.Stop(s.notifyChan)
-		close(s.notifyChan)
-
-		s.log.Debug("shutdown interrupt")
-	}
+	s.log.Debug("shutdown interrupt")
+	s.down()
 }
 
 func (s *shutter) down() {
