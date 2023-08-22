@@ -56,8 +56,7 @@ func NewBunPostgres(
 			logLevel = zap.DebugLevel
 		}
 
-		log := o.Log().Named("bun")
-		stdLog, _ := zap.NewStdLogAt(log, logLevel)
+		stdLog, _ := zap.NewStdLogAt(o.Log(), logLevel)
 
 		bunDB.AddQueryHook(
 			bundebug.NewQueryHook(

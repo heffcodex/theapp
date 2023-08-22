@@ -14,12 +14,11 @@ type GRPCConfig struct {
 
 func NewGRPC(cfg GRPCConfig, dialOptions []grpc.DialOption, options ...Option) *D[*grpc.ClientConn] {
 	resolve := func(o OptSet) (*grpc.ClientConn, error) {
-		log := o.Log().Named("grpc")
 		logDecider := func(_ string, err error) bool { return o.IsDebug() || err != nil }
 
 		dialOptions = append(dialOptions,
-			grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(log, grpc_zap.WithDecider(logDecider))),
-			grpc.WithStreamInterceptor(grpc_zap.StreamClientInterceptor(log, grpc_zap.WithDecider(logDecider))),
+			grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(o.Log(), grpc_zap.WithDecider(logDecider))),
+			grpc.WithStreamInterceptor(grpc_zap.StreamClientInterceptor(o.Log(), grpc_zap.WithDecider(logDecider))),
 		)
 
 		return grpc.Dial(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port), dialOptions...)
