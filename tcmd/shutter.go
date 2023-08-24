@@ -62,16 +62,16 @@ func (s *shutter) waitInterrupt() {
 	if firstWaiter {
 		s.notifyChan = make(chan os.Signal, len(s.signals))
 		signal.Notify(s.notifyChan, s.signals...)
+
+		defer func() {
+			s.log.Debug("shutdown interrupt")
+
+			signal.Stop(s.notifyChan)
+			close(s.notifyChan)
+		}()
 	}
 
 	<-s.notifyChan
-
-	if firstWaiter {
-		signal.Stop(s.notifyChan)
-		close(s.notifyChan)
-
-		s.log.Debug("shutdown interrupt")
-	}
 }
 
 func (s *shutter) down() {
@@ -80,7 +80,7 @@ func (s *shutter) down() {
 	}
 
 	s.log.Info("shutdown start", zap.Duration("timeout", s.timeout))
-	s.cancelFn()
+	s.cancel()
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer func() {
@@ -111,4 +111,8 @@ func (s *shutter) down() {
 	} else {
 		s.log.Error("shutdown error", zap.Error(err))
 	}
+}
+
+func (s *shutter) cancel() {
+	s.cancelFn()
 }

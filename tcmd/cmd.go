@@ -58,7 +58,7 @@ func (c *Cmd[C, A]) makeRoot(shut *shutter) *cobra.Command {
 			shut.setup(app.L(), cancelFn, app.Close, timeout)
 			go func() {
 				shut.waitInterrupt()
-				shut.down()
+				shut.cancel()
 			}()
 
 			return nil
