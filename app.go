@@ -23,9 +23,9 @@ type App[C tcfg.Config] interface {
 	Close(ctx context.Context) error
 }
 
-var _ App[tcfg.Config] = (*Base[tcfg.Config])(nil)
+var _ App[tcfg.Config] = (*BaseApp[tcfg.Config])(nil)
 
-type Base[C tcfg.Config] struct {
+type BaseApp[C tcfg.Config] struct {
 	cfg C
 	log *zap.Logger
 
@@ -34,7 +34,7 @@ type Base[C tcfg.Config] struct {
 	closerLock sync.Mutex
 }
 
-func New[C tcfg.Config]() (*Base[C], error) {
+func New[C tcfg.Config]() (*BaseApp[C], error) {
 	cfg, err := tcfg.LoadConfig[C]()
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
@@ -59,24 +59,24 @@ func New[C tcfg.Config]() (*Base[C], error) {
 		return nil, fmt.Errorf("set maxprocs: %w", err)
 	}
 
-	return &Base[C]{
+	return &BaseApp[C]{
 		cfg: cfg,
 		log: appLog,
 	}, nil
 }
 
-func (a *Base[C]) Config() C      { return a.cfg }
-func (a *Base[C]) IsDebug() bool  { return a.cfg.LogLevel() == zap.DebugLevel.String() }
-func (a *Base[C]) L() *zap.Logger { return a.log }
+func (a *BaseApp[C]) Config() C      { return a.cfg }
+func (a *BaseApp[C]) IsDebug() bool  { return a.cfg.LogLevel() == zap.DebugLevel.String() }
+func (a *BaseApp[C]) L() *zap.Logger { return a.log }
 
-func (a *Base[C]) AddCloser(fns ...CloseFn) {
+func (a *BaseApp[C]) AddCloser(fns ...CloseFn) {
 	_ = a.safeClose(func() error {
 		a.closers = append(a.closers, fns...)
 		return nil
 	})
 }
 
-func (a *Base[C]) Close(ctx context.Context) error {
+func (a *BaseApp[C]) Close(ctx context.Context) error {
 	return a.safeClose(func() error {
 		errs := make([]error, 0, len(a.closers))
 
@@ -94,7 +94,7 @@ func (a *Base[C]) Close(ctx context.Context) error {
 	})
 }
 
-func (a *Base[C]) safeClose(f func() error) error {
+func (a *BaseApp[C]) safeClose(f func() error) error {
 	a.closerLock.Lock()
 	defer a.closerLock.Unlock()
 
