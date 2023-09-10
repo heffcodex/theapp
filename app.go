@@ -17,7 +17,6 @@ type CloseFn func(context.Context) error
 
 type App[C tcfg.Config] interface {
 	Config() C
-	IsDebug() bool
 	L() *zap.Logger
 	AddCloser(fns ...CloseFn)
 	Close(ctx context.Context) error
@@ -66,7 +65,6 @@ func New[C tcfg.Config]() (*BaseApp[C], error) {
 }
 
 func (a *BaseApp[C]) Config() C      { return a.cfg }
-func (a *BaseApp[C]) IsDebug() bool  { return a.cfg.LogLevel() == zap.DebugLevel.String() }
 func (a *BaseApp[C]) L() *zap.Logger { return a.log }
 
 func (a *BaseApp[C]) AddCloser(fns ...CloseFn) {
