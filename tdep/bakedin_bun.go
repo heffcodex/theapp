@@ -33,7 +33,12 @@ func NewBunPostgres(
 	options ...Option,
 ) *D[*bun.DB] {
 	resolve := func(o OptSet) (*bun.DB, error) {
-		conn := pgdriver.NewConnector(pgdriver.WithDSN(cfg.DSN))
+		connOpts := []pgdriver.Option{
+			pgdriver.WithApplicationName(o.Name()),
+			pgdriver.WithDSN(cfg.DSN),
+		}
+
+		conn := pgdriver.NewConnector(connOpts...)
 		if onTuneConnector != nil {
 			onTuneConnector(conn)
 		}

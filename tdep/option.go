@@ -7,9 +7,9 @@ import (
 )
 
 type OptSet struct {
+	name      string
 	env       tcfg.Env
 	singleton bool
-	debug     bool
 	log       *zap.Logger
 }
 
@@ -25,12 +25,19 @@ func newOptSet(options ...Option) OptSet {
 	return opts
 }
 
+func (o *OptSet) Name() string      { return o.name }
 func (o *OptSet) Env() tcfg.Env     { return o.env }
 func (o *OptSet) IsSingleton() bool { return o.singleton }
-func (o *OptSet) IsDebug() bool     { return o.debug }
 func (o *OptSet) Log() *zap.Logger  { return o.log }
+func (o *OptSet) IsDebug() bool     { return o.log == nil || o.log.Core().Enabled(zap.DebugLevel) }
 
 type Option func(*OptSet)
+
+func Name(name string) Option {
+	return func(o *OptSet) {
+		o.name = name
+	}
+}
 
 func Env(env tcfg.Env) Option {
 	return func(o *OptSet) {
@@ -41,14 +48,6 @@ func Env(env tcfg.Env) Option {
 func Singleton() Option {
 	return func(o *OptSet) {
 		o.singleton = true
-	}
-}
-
-func Debug(enable ...bool) Option {
-	enabled := len(enable) == 0 || enable[0]
-
-	return func(o *OptSet) {
-		o.debug = enabled
 	}
 }
 

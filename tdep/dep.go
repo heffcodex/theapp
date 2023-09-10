@@ -121,7 +121,7 @@ func (d *D[T]) Close(ctx context.Context) error {
 }
 
 func (d *D[T]) debugWrite(msg string) {
-	if d.opts.debug {
-		d.opts.log.Debug(msg, zap.String("typ", d.typ))
+	if log := d.opts.Log(); log != nil && d.opts.IsDebug() {
+		log.Debug(msg, zap.String("typ", d.typ))
 	}
 }

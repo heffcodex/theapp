@@ -12,7 +12,7 @@ func NewRedix(config redix.Config, options ...Option) *D[*redix.Client] {
 			config.AppendNamespace(env.String())
 		}
 
-		client, err := redix.NewClient(config)
+		client, err := redix.NewClient(o.Name(), config)
 		if err != nil {
 			return nil, fmt.Errorf("new client: %w", err)
 		}
