@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/heffcodex/redix v0.0.12
+	github.com/heffcodex/redix v0.0.13
 	github.com/heffcodex/zapex v1.7.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0

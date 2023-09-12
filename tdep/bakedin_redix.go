@@ -6,9 +6,9 @@ import (
 	"github.com/heffcodex/redix"
 )
 
-func NewRedix(config *redix.Config, options ...Option) *D[*redix.Client] {
+func NewRedix(config redix.Config, options ...Option) *D[*redix.Client] { //nolint: gocritic // hugeParam: it's ok
 	resolve := func(o OptSet) (*redix.Client, error) {
-		_config := &redix.Config{
+		_config := redix.Config{
 			Name:      config.Name,
 			Namespace: config.Namespace,
 			DSN:       config.DSN,

@@ -159,6 +159,8 @@ github.com/heffcodex/redix v0.0.11 h1:2rw95XxRyPFCq9ZfHfHZaaL8i5CJ0gX3di9nMJdaPK
 github.com/heffcodex/redix v0.0.11/go.mod h1:yVrxYcciV9R3M/Nb4mt95Z/JEWLxY9jpdnqKlop0Lbc=
 github.com/heffcodex/redix v0.0.12 h1:br4LNHVEAQ96+3X7ygeWk/Pg8p4C0dFQSnj8X0p4UgU=
 github.com/heffcodex/redix v0.0.12/go.mod h1:yVrxYcciV9R3M/Nb4mt95Z/JEWLxY9jpdnqKlop0Lbc=
+github.com/heffcodex/redix v0.0.13 h1:hqUtZw8wdDkf/kJ4t8J+H7lzSHpMwo5FkYsKnHwxqas=
+github.com/heffcodex/redix v0.0.13/go.mod h1:yVrxYcciV9R3M/Nb4mt95Z/JEWLxY9jpdnqKlop0Lbc=
 github.com/heffcodex/zapex v1.7.1 h1:hyGtIRu9905PVgnVoT7jRBavOWAGYGsl7PxQBoI7ahU=
 github.com/heffcodex/zapex v1.7.1/go.mod h1:ttDgNTcKfPDrykLw8PwRh2rKOzcOwPXSd7h7u3q4b2I=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
