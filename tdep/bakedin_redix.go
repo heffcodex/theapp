@@ -19,6 +19,10 @@ func NewRedix(config redix.Config, options ...Option) *D[*redix.Client] { //noli
 			},
 		}
 
+		if _config.Name == "" {
+			_config.Name = o.Name()
+		}
+
 		if _config.Namespace == "" {
 			_config.Namespace = redix.Namespace(o.Name())
 
