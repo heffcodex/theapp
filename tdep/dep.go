@@ -2,6 +2,7 @@ package tdep
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"sync"
@@ -10,6 +11,8 @@ import (
 )
 
 var (
+	ErrClosed = errors.New("closed")
+
 	closerT    = reflect.TypeOf((*closer)(nil)).Elem()
 	ctxCloserT = reflect.TypeOf((*ctxCloser)(nil)).Elem()
 )
@@ -33,6 +36,7 @@ type D[T any] struct {
 	// updated in behaviour of Get(), MustGet() or Close()
 	instance T
 	resolved bool
+	closed   bool
 }
 
 func New[T any](resolve ResolveFn[T], options ...Option) *D[T] {
@@ -69,6 +73,10 @@ func (d *D[T]) Get() (T, error) {
 	d.l.Lock()
 	defer d.l.Unlock()
 
+	if d.closed {
+		return *new(T), ErrClosed
+	}
+
 	if !d.opts.singleton || !d.resolved {
 		instance, err := d.resolve(d.opts)
 		if err != nil {
@@ -101,6 +109,13 @@ func (d *D[T]) Health(ctx context.Context) error {
 	return d.health(ctx, d)
 }
 
+func (d *D[T]) Closed() bool {
+	d.l.Lock()
+	defer d.l.Unlock()
+
+	return d.closed
+}
+
 func (d *D[T]) Close(ctx context.Context) error {
 	if d == nil {
 		return nil
@@ -108,6 +123,10 @@ func (d *D[T]) Close(ctx context.Context) error {
 
 	d.l.Lock()
 	defer d.l.Unlock()
+
+	if d.closed {
+		return ErrClosed
+	}
 
 	if !d.resolved {
 		d.debugWrite("close (nop: unresolved)")
@@ -117,6 +136,7 @@ func (d *D[T]) Close(ctx context.Context) error {
 	defer func() {
 		d.instance = *new(T)
 		d.resolved = false
+		d.closed = true
 	}()
 
 	vof := reflect.ValueOf(d.instance)
