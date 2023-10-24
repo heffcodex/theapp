@@ -28,6 +28,7 @@ type D[T any] struct {
 	typ     string
 	resolve ResolveFn[T]
 	opts    OptSet
+	health  func(ctx context.Context, d *D[T]) error
 
 	// updated in behaviour of Get(), MustGet() or Close()
 	instance T
@@ -48,6 +49,11 @@ func New[T any](resolve ResolveFn[T], options ...Option) *D[T] {
 		opts:    newOptSet(options...),
 	}
 
+	return d
+}
+
+func (d *D[T]) WithHealthCheck(fn func(ctx context.Context, d *D[T]) error) *D[T] {
+	d.health = fn
 	return d
 }
 
@@ -85,6 +91,14 @@ func (d *D[T]) MustGet() T {
 	}
 
 	return v
+}
+
+func (d *D[T]) Health(ctx context.Context) error {
+	if d.health == nil {
+		return nil
+	}
+
+	return d.health(ctx, d)
 }
 
 func (d *D[T]) Close(ctx context.Context) error {

@@ -565,3 +565,7 @@ issues:
   max-same-issues: 0
   new: false
   fix: false
+  exclude-rules:
+    - text: "grpc_zap" # import-alias-naming
+      linters:
+        - revive

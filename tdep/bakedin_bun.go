@@ -1,7 +1,9 @@
 package tdep
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -73,5 +75,20 @@ func NewBunPostgres(
 		return bunDB, nil
 	}
 
-	return New(resolve, options...)
+	return New(resolve, options...).WithHealthCheck(func(ctx context.Context, d *D[*bun.DB]) error {
+		instance, err := d.Get()
+		if err != nil {
+			return fmt.Errorf("get: %w", err)
+		}
+
+		if !d.Options().IsSingleton() {
+			defer func() { _ = d.Close(ctx) }()
+		}
+
+		if err = instance.PingContext(ctx); err != nil {
+			return fmt.Errorf("ping: %w", err)
+		}
+
+		return nil
+	})
 }

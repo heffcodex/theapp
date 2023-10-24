@@ -19,7 +19,7 @@ func App[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command) A {
 }
 
 func getApp[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command) A {
-	return cmd.Context().Value(appKey{}).(A)
+	return cmd.Context().Value(appKey{}).(A) //nolint: revive // unchecked-type-assertion: it's ok to panic here
 }
 
 func WaitInterrupt(cmd *cobra.Command) {
@@ -27,7 +27,7 @@ func WaitInterrupt(cmd *cobra.Command) {
 }
 
 func getShutter(cmd *cobra.Command) *shutter {
-	return cmd.Context().Value(shutterKey{}).(*shutter)
+	return cmd.Context().Value(shutterKey{}).(*shutter) //nolint: revive // unchecked-type-assertion: it's ok to panic here
 }
 
 func cmdInject[C tcfg.Config, A theapp.App[C]](cmd *cobra.Command, app A, shut *shutter) (cancel context.CancelFunc) {
