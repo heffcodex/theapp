@@ -62,6 +62,7 @@ func LoadConfig[C Config]() (C, error) {
 
 	v.AddConfigPath(".")
 	v.AddConfigPath("./.data")
+	v.AddConfigPath("./conf.d")
 	v.SetConfigType("yaml")
 	v.AutomaticEnv()
 	v.SetEnvPrefix("CFG")
